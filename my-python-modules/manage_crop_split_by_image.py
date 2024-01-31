@@ -179,6 +179,7 @@ def set_processing_parameters():
     # setting dimensions for cropping original images 
     # processing_parameters['dimensions'] = [(64,64), (128,128), (256,256), (512,512), (1024,1024)]
     # processing_parameters['dimensions'] = [(224,224)]
+    # processing_parameters['dimensions'] = [(256,256)]
     processing_parameters['dimensions'] = [(256,256)]
 
     # setting percent for split training, validation and testing datasets
