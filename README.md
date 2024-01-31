@@ -34,6 +34,7 @@ pip install -r requirements.txt
 ```
 
 ## Running Python Application 
+
 ```
 ```
 access specific folder 'wm-pre-processing-images'
