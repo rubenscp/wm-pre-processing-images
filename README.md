@@ -22,10 +22,23 @@ module load python/3.10.10-gcc-9.4.0
 ```
 pip install --user virtualenv
 ```
-- virtualenv -p python3.10 venv-wm-pre-processing-images
-- source venv-wm-pre-processing-images/bin/activate
-- pip install -r requirements.txt
+```
+virtualenv -p python3.10 venv-wm-pre-processing-images
+```
+```
+source venv-wm-pre-processing-images/bin/activate
+```
+```
+pip install -r requirements.txt
+```
+```
 
 ## Running Python Application 
-- access specific folder 'wm-pre-processing-images'
-- execute command: python my-python-modules/manage_crop_split_by_image.py
+```
+```
+access specific folder 'wm-pre-processing-images'
+```
+```
+execute command: python my-python-modules/manage_crop_split_by_image.py
+```
+```
