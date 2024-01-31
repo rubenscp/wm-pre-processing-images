@@ -10,7 +10,8 @@ Date: 20/10/2023
 Version: 1.0
 """
    
-PROJECT_HOME_PATH = 'E:/Doctorate/White-Mold-Dataset/'   
+# PROJECT_HOME_PATH = 'E:/Doctorate/White-Mold-Dataset/'  
+PROJECT_HOME_PATH = '/home/lovelace/proj/proj939/rubenscp/research/white-mold-dataset/'
 
 META_FILE = 'meta.json'
 

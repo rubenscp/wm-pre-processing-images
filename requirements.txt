@@ -4,3 +4,4 @@ pandas
 opencv-python
 lxml
 dict2xml
+openpyxl
