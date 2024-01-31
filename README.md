@@ -19,9 +19,7 @@ This Python project aims to support the pre-processing of the images used to tra
 ```
 module load python/3.10.10-gcc-9.4.0
 ```
-```
 pip install --user virtualenv
-```
 ```
 virtualenv -p python3.10 venv-wm-pre-processing-images
 ```
