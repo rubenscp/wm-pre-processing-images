@@ -33,7 +33,11 @@ pip install -r requirements.txt
 ```
 ```
 
+
+
 ## Running Python Application 
+
+
 
 ```
 ```
@@ -41,5 +45,3 @@ access specific folder 'wm-pre-processing-images'
 ```
 ```
 execute command: python my-python-modules/manage_crop_split_by_image.py
-```
-```
