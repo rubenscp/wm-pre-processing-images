@@ -18,7 +18,6 @@ from manage_log import *
 from utils import Utils
 from image_utils import ImageUtils
 from random import randrange
-import parameter as parameter 
 
 # Importing entity classes
 from entity.ImageAnnotation import ImageAnnotation
@@ -27,6 +26,7 @@ from entity.ImageAnnotation import ImageAnnotation
 # Constants
 # ###########################################
 LINE_FEED = '\n'
+NEW_FILE = True
 
 # ###########################################
 # Application Methods
@@ -37,45 +37,62 @@ LINE_FEED = '\n'
 # ###########################################
 
 def crop_bbox_list_for_ssd_pascal_voc_model(
-        processing_parameters, 
+        parameters, 
         train_bbox_list, valid_bbox_list, test_bbox_list, 
         processing_statistics):
     
     # creating working folders 
-    create_working_folders(processing_parameters)
+    create_working_folders(parameters)
 
-    # cropping bbox images from train, valid and test lists    
-    for height, width in processing_parameters['dimensions']:
+    # cropping bbox images from train, valid and test lists        
+    for item in parameters['input']['dimensions']:
+        height = item['height']
+        width  = item['width']
 
         logging_info('')
         logging_info(f'SDD model with Pascal VOC format - processing cropping window (HxW): ({height},{width})' + LINE_FEED)
 
-        target_folder = os.path.join(parameter.OUTPUT_MODEL_PATH, 
-                                     parameter.SSD_PASCAL_VOC_MODEL, 
-                                     str(height) + 'x' + str(width),
-                                     parameter.SSD_PASCAL_VOC_MODEL_TRAIN)
+        target_folder = os.path.join(
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['main_folder'],
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['train_folder']
+        )
+        # target_folder = os.path.join(parameter.OUTPUT_MODEL_PATH, 
+        #                              parameter.SSD_PASCAL_VOC_MODEL, 
+        #                              str(height) + 'x' + str(width),
+        #                              parameter.SSD_PASCAL_VOC_MODEL_TRAIN)
         number_of_sucess, number_of_errors = \
-            crop_bbox_images_from_list(processing_parameters, train_bbox_list, 
-                                   height, width, target_folder)
+            crop_bbox_images_from_list(parameters, train_bbox_list,
+                                       height, width, target_folder)
         processing_statistics['models']['ssd_pascal_voc'][height]['train']['success'] = number_of_sucess
         processing_statistics['models']['ssd_pascal_voc'][height]['train']['error']   = number_of_errors
         
-        target_folder = os.path.join(parameter.OUTPUT_MODEL_PATH, 
-                                     parameter.SSD_PASCAL_VOC_MODEL, 
-                                     str(height) + 'x' + str(width),
-                                     parameter.SSD_PASCAL_VOC_MODEL_VALID)
+        target_folder = os.path.join(
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['main_folder'],
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['valid_folder']
+        )
+        # target_folder = os.path.join(parameter.OUTPUT_MODEL_PATH, 
+        #                              parameter.SSD_PASCAL_VOC_MODEL, 
+        #                              str(height) + 'x' + str(width),
+        #                              parameter.SSD_PASCAL_VOC_MODEL_VALID)
         number_of_sucess, number_of_errors = \
-            crop_bbox_images_from_list(processing_parameters, valid_bbox_list, 
+            crop_bbox_images_from_list(parameters, valid_bbox_list, 
                                    height, width, target_folder)
         processing_statistics['models']['ssd_pascal_voc'][height]['valid']['success'] = number_of_sucess
         processing_statistics['models']['ssd_pascal_voc'][height]['valid']['error']   = number_of_errors
         
-        target_folder = os.path.join(parameter.OUTPUT_MODEL_PATH, 
-                                     parameter.SSD_PASCAL_VOC_MODEL, 
-                                     str(height) + 'x' + str(width),
-                                     parameter.SSD_PASCAL_VOC_MODEL_TEST)
+        target_folder = os.path.join(
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['main_folder'],
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['test_folder']
+        )
+        # target_folder = os.path.join(parameter.OUTPUT_MODEL_PATH, 
+        #                              parameter.SSD_PASCAL_VOC_MODEL, 
+        #                              str(height) + 'x' + str(width),
+        #                              parameter.SSD_PASCAL_VOC_MODEL_TEST)
         number_of_sucess, number_of_errors = \
-            crop_bbox_images_from_list(processing_parameters, test_bbox_list, 
+            crop_bbox_images_from_list(parameters, test_bbox_list, 
                                    height, width, target_folder)
         processing_statistics['models']['ssd_pascal_voc'][height]['test']['success'] = number_of_sucess
         processing_statistics['models']['ssd_pascal_voc'][height]['test']['error']   = number_of_errors
@@ -85,39 +102,57 @@ def crop_bbox_list_for_ssd_pascal_voc_model(
 # ###########################################
 
 # Create all working folders 
-def create_working_folders(processing_parameters):
+def create_working_folders(parameters):
 
     # creating output folders
-    for height, width in processing_parameters['dimensions']:
-        folder = os.path.join(parameter.OUTPUT_MODEL_PATH, parameter.SSD_PASCAL_VOC_MODEL, 
-                              str(height) + 'x' + str(width),
-                              parameter.SSD_PASCAL_VOC_MODEL_TRAIN)
-        Utils.remove_directory(folder)
+    for item in parameters['input']['dimensions']:
+        height = item['height']
+        width  = item['width']
+        folder = os.path.join(
+            parameters['results']['output_dataset']['output_dataset_folder'],
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['main_folder'],
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['train_folder']
+        )   
+      
         Utils.create_directory(folder)
-        if processing_parameters['bounding_box']['draw_and_save']:
-            bbox_folder = os.path.join(folder, parameter.SSD_PASCAL_VOC_MODEL_BBOX)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['bounding_box_folder']
+            )             
             Utils.create_directory(bbox_folder)
 
-        folder = os.path.join(parameter.OUTPUT_MODEL_PATH, parameter.SSD_PASCAL_VOC_MODEL, 
-                              str(height) + 'x' + str(width),
-                              parameter.SSD_PASCAL_VOC_MODEL_VALID)
-        Utils.remove_directory(folder)
+        folder = os.path.join(
+            parameters['results']['output_dataset']['output_dataset_folder'],
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['main_folder'],
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['valid_folder']
+        )         
         Utils.create_directory(folder)
-        if processing_parameters['bounding_box']['draw_and_save']:
-            bbox_folder = os.path.join(folder, parameter.SSD_PASCAL_VOC_MODEL_BBOX)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['bounding_box_folder']
+            )             
             Utils.create_directory(bbox_folder)
 
-        folder = os.path.join(parameter.OUTPUT_MODEL_PATH, parameter.SSD_PASCAL_VOC_MODEL, 
-                              str(height) + 'x' + str(width),
-                              parameter.SSD_PASCAL_VOC_MODEL_TEST)
-        Utils.remove_directory(folder)
+        folder = os.path.join(
+            parameters['results']['output_dataset']['output_dataset_folder'],
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['main_folder'],
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['test_folder']
+        )         
         Utils.create_directory(folder)
-        if processing_parameters['bounding_box']['draw_and_save']:
-            bbox_folder = os.path.join(folder, parameter.SSD_PASCAL_VOC_MODEL_BBOX)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['bounding_box_folder']
+            )             
             Utils.create_directory(bbox_folder)
 
 # Crop bbox images 
-def crop_bbox_images_from_list(processing_parameters, bbox_list, 
+def crop_bbox_images_from_list(parameters, bbox_list, 
                                crop_height, crop_width, target_folder):
 
     # setting auxiliary variables 
@@ -127,8 +162,11 @@ def crop_bbox_images_from_list(processing_parameters, bbox_list,
     # setting image and annotation folders 
     image_target_folder = target_folder
     annotation_target_folder = target_folder
-    bbox_target_folder = os.path.join(target_folder, parameter.SSD_MODEL_BBOX)
-
+    bbox_target_folder = os.path.join(
+        target_folder, 
+        parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['bounding_box_folder']
+    )
+     
     # processing all bounding boxes 
     for bbox_item in bbox_list:
 
@@ -152,8 +190,10 @@ def crop_bbox_images_from_list(processing_parameters, bbox_list,
 
         # reading the original image 
         image_name = image_annotation.image_name_with_extension
-        pathpath = os.path.join(parameter.OUTPUT_ALL_IMAGES_AND_ANNOTATIONS)
-        image = ImageUtils.read_image(image_annotation.image_name_with_extension, pathpath)
+        input_folder = os.path.join(
+            parameters['results']['all_images']
+        )
+        image = ImageUtils.read_image(image_annotation.image_name_with_extension, input_folder)
 
         # calculating the new coordinates of the new cropped image 
         result, linP1, colP1, linP2, colP2 = \
@@ -224,13 +264,13 @@ def crop_bbox_images_from_list(processing_parameters, bbox_list,
             os.path.join(annotation_target_folder, filename_cropped_image_annotation_ssd_pascal_voc)
         xml_format_string = cropped_image_supervisely_annotation.get_annotation_in_voc_pascal_format()
         Utils.save_text_file(path_and_filename_cropped_image_annotation_ssd_pascal_voc, 
-                             xml_format_string)
+                             xml_format_string, NEW_FILE)
         
         # adding to number of cropped images create with sucess 
         number_of_sucess += 1
 
         # drawing and saving new images with bounding box
-        if processing_parameters['bounding_box']['draw_and_save']:
+        if parameters['input']['draw_and_save_bounding_box']:
             # setting path and image filename
             new_image_filename_bbox_drawed = \
                 image_annotation.image_name + '-bbox-' + f'{bounding_box.id}' + '-drawn' + '.jpg'

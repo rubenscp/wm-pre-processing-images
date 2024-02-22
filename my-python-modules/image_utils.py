@@ -38,8 +38,7 @@ class ImageUtils:
     def calculate_coordinates_new_cropped_image(image_name_with_extension, 
                                                 image, bounding_box, 
                                                 crop_height_size, crop_width_size):
-
-        # getting image shape 
+        # getting image shape        
         image_height = image.shape[0]
         image_width  = image.shape[1]
 

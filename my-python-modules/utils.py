@@ -12,6 +12,7 @@ Version: 1.0
 # Importing Python libraries 
 import os
 import shutil
+import json 
 # import cv2
 
 # ###########################################
@@ -77,17 +78,17 @@ class Utils:
     # def save_image(path_and_filename, image):
     #     cv2.imwrite(path_and_filename, image)
 
-    # Save text file 
+   # Save text file 
     @staticmethod
-    def save_text_file(path_and_filename, content_of_text_file):
+    def save_text_file(path_and_filename, content_of_text_file, create):
         # setting annotation file
-        text_file = open(path_and_filename, 'a+')
+        text_file = open(path_and_filename, 'w' if create else 'a+')
 
         # write line
         text_file.write(content_of_text_file)
 
         # closing text file
-        text_file.close()        
+        text_file.close()       
 
     # # Draw bounding box in the image
     # @staticmethod
@@ -113,6 +114,8 @@ class Utils:
     # Create zip file from a directory 
     @staticmethod
     def zip_directory(source_directory, output_filename):
+        print(f'source_directory {source_directory}')
+        print(f'output_filename {output_filename}')
         shutil.make_archive(output_filename, 'zip', source_directory)
 
         # Check to see if the zip file is created
@@ -121,4 +124,31 @@ class Utils:
             return True, full_output_filename
         else:
             return False, None
+
+     # Read JSON file with execution parameters
+    @staticmethod
+    def read_json_parameters(filename):
+
+        # defining  parameters dictionary
+        parameters = {}
+
+        # reading parameters file 
+        with open(filename) as json_file:
+            parameters = json.load(json_file)
+
+        # returning  parameters dictionary
+        return parameters
+
+    # Convert json boolean to python boolean 
+    def to_boolean_value(json_boolean_value):
+        boolean_value = bool(json_boolean_value == 'true')
+
+    # Create a pretty json for printing
+    @staticmethod
+    def get_pretty_json(json_text):
+
+        # formatting pretty json
+        json_formatted_str = json.dumps(json_text, indent=4)
         
+        # returning json formatted
+        return json_formatted_str

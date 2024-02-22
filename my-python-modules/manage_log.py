@@ -16,15 +16,12 @@ import logging
 from datetime import datetime
 from utils import Utils
 
-def logging_create_log(log_filename='crop-original-image'):
-
-    # creating log folder 
-    log_folder = 'log'
-    Utils.create_directory('log')
-
+def logging_create_log(log_folder, log_filename):
+    
     # setting logging file 
     now = datetime.now()
-    filename= os.path.join(log_folder, log_filename + now.strftime('-%Y-%m-%d-%Hh%Mm%Ss.log'))
+    log_filename_full = log_filename + now.strftime('-%Y-%m-%d-%Hh%Mm%Ss.log')
+    filename = os.path.join(log_folder, log_filename_full)
     log_format = '%(levelname)s %(asctime)s: %(message)s'
     logging.basicConfig(filename=filename, encoding='utf-8', 
                         level=logging.DEBUG, format=log_format)
@@ -48,8 +45,4 @@ def get_datetime():
     now = datetime.now()
     date_time_text = now.strftime('%Y/%m/%d %H:%M:%S')
     return date_time_text
-
-
-
-
-
+    

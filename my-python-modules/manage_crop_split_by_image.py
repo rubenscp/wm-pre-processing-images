@@ -16,14 +16,10 @@ import json
 import os
 from pathlib import Path
 
-# Importing frameworks
-# import torch
-
 # Importing python modules
 from manage_log import *
 from utils import Utils
 from random import randrange
-import parameter as parameter 
 from split_original_dataset import * 
 from crop_bbox_ssd_model import * 
 from crop_bbox_ssd_model_pascal_voc_format import * 
@@ -33,10 +29,14 @@ from crop_bbox_yolo_v8_model import *
 # Importing entity classes
 from entity.ImageAnnotation import ImageAnnotation
 
+# Import python code from White Mold Project 
+from tasks import Tasks
+
 # ###########################################
 # Constants
 # ###########################################
 LINE_FEED = '\n'
+NEW_FILE = True
 
 # ###########################################
 # Application Methods
@@ -55,167 +55,303 @@ def main():
     All values of the parameters used here are defined at the "parameter.py".
 
     """
-    # creating log file 
-    logging_create_log()
 
-    logging_info('White Mold Project ')
-    logging_info('Crop original images from dataset splitting by images' + LINE_FEED)
-    print('White Mold Project ')
-    print('Crop original images from dataset splitting by images' + LINE_FEED)
-    
+    # creating Tasks object 
+    processing_tasks = Tasks()
+
     # setting dictionary initial parameters for processing
-    logging_info('1) Setting processing parameters' + LINE_FEED)
-    print('1) Setting processing parameters' + LINE_FEED)
-    processing_parameters = set_processing_parameters()
-    processing_statistics = set_processing_statistics(processing_parameters)
+    full_path_project = '/home/lovelace/proj/proj939/rubenscp/research/white-mold-applications/wm-pre-processing-images'
 
-    # setting folder for split criteria 
-    set_folder_by_split_criteria(processing_parameters, parameter)
+    # getting application parameters
+    processing_tasks.start_task('Getting application parameters')
+    parameters_filename = 'wm_pre_processing_images_parameters.json'
+    parameters = get_parameters(full_path_project, parameters_filename)
+    processing_tasks.finish_task('Getting application parameters')
 
-    # creating all working folders
-    logging_info('2) Creating working folders' + LINE_FEED)
-    print('2) Creating working folders' + LINE_FEED)
-    create_working_folders(processing_parameters)
+    # getting last running id
+    processing_tasks.start_task('Getting running id')
+    running_id = get_running_id(parameters)
+    processing_tasks.finish_task('Getting running id')
+
+    # setting output folder results
+    processing_tasks.start_task('Setting result folders')
+    set_results_folder(parameters)
+    processing_tasks.finish_task('Setting result folders')
+
+    # creating log file 
+    processing_tasks.start_task('Creating log file')
+    logging_create_log(
+        parameters['results']['log_folder'], 
+        parameters['results']['log_filename']
+    )
+    processing_tasks.finish_task('Creating log file')
+
+    logging_info('White Mold Research')
+    logging_info('Pre-processing Original Images' + LINE_FEED)
+    logging_info('Crop original images from dataset splitting by images' + LINE_FEED)
+
+    logging_info(f'')
+    logging_info(f'>> Get running id')
+    logging_info(f'running id: {str(running_id)}')   
+    logging_info(f'')
+    logging_info(f'>> Set result folders')
+
+    # creating new instance of parameters file related to current running
+    processing_tasks.start_task('Saving processing parameters')
+    save_processing_parameters(parameters_filename, parameters)
+    processing_tasks.finish_task('Saving processing parameters')
+
+    # creating processing statistics
+    processing_tasks.start_task('Creating processing statistics')
+    processing_statistics = set_processing_statistics(parameters)
+    processing_tasks.finish_task('Creating processing statistics')
 
     # getting object classes
-    image_input_supervisely_path = os.path.join(parameter.INPUT_PATH, parameter.INPUT_SUPERVISELY_FORMAT)
-    classes_dict, classes_statistics = get_object_classes(image_input_supervisely_path, parameter.META_FILE)    
+    image_input_supervisely_path = os.path.join(
+        parameters['processing']['research_root_folder'],
+        parameters['input']['main_dataset_folder'],
+        parameters['input']['input_dataset_folder'],
+        parameters['input']['supervisely']['original_images_folder'],
+    )
+    classes_dict, classes_statistics = get_object_classes(
+        image_input_supervisely_path,
+        parameters['input']['supervisely']['meta_file'],
+    )    
+    logging.info(f'Classes: {Utils.get_pretty_json(classes_dict)}')
 
     # getting the list of images for training, validaton and testing selected randomly
     # to use in all tasks of image cropping for all dimensions
-    logging_info('3) Creating list of bounding boxes from original annotated images' + LINE_FEED)
-    print('3) Creating list of bounding boxes from original annotated images' + LINE_FEED)
+    processing_tasks.start_task('Creating list of bounding boxes from original annotated images')
+    logging_info('Creating list of bounding boxes from original annotated images' + LINE_FEED)
     train_bbox_list, valid_bbox_list, test_bbox_list, \
     train_bbox_df, valid_bbox_df, test_bbox_df = \
-        create_bbox_list_from_original_dataset(processing_parameters, processing_statistics)
+        create_bbox_list_from_original_dataset(parameters, processing_statistics)
+    processing_tasks.finish_task('Creating list of bounding boxes from original annotated images')
 
     # evalute models for processing 
-    if 'ssd' in processing_parameters['models']:
-        logging_info('')
-        logging_info('4.1) Cropping bounding box image for SSD model' + LINE_FEED)
-        print('4.1) Cropping bounding box image for SSD model' + LINE_FEED)
-        crop_bbox_list_for_ssd_model(processing_parameters, 
-                                     train_bbox_list,
-                                     valid_bbox_list,
-                                     test_bbox_list, 
-                                     processing_statistics)
+    for model in parameters['input']['models']:
     
-    if 'ssd_pascal_voc' in processing_parameters['models']:
-        logging_info('')
-        logging_info('4.2) Cropping bounding box image for SDD model with Pascal VOC format' + LINE_FEED)
-        print('4.2) Cropping bounding box image for SDD model with Pascal VOC format' + LINE_FEED)
-        crop_bbox_list_for_ssd_pascal_voc_model(processing_parameters,
+        if model == 'ssd':
+            processing_tasks.start_task('Cropping bounding box image for SSD model')
+            logging_info('')
+            logging_info('4.1) Cropping bounding box image for SSD model' + LINE_FEED)
+            crop_bbox_list_for_ssd_model(parameters, 
+                                        train_bbox_list,
+                                        valid_bbox_list,
+                                        test_bbox_list, 
+                                        processing_statistics)
+            processing_tasks.finish_task('Cropping bounding box image for SSD model')
+        
+        if model == 'ssd_pascal_voc':
+            processing_tasks.start_task('Cropping bounding box image for SSD model with Pascal VOC format')
+            logging_info('')
+            logging_info('4.2) Cropping bounding box image for SDD model with Pascal VOC format' + LINE_FEED)
+            crop_bbox_list_for_ssd_pascal_voc_model(parameters,
+                                                    train_bbox_list, 
+                                                    valid_bbox_list, 
+                                                    test_bbox_list,
+                                                    processing_statistics)
+            processing_tasks.finish_task('Cropping bounding box image for SSD model with Pascal VOC format')
+                                            
+        if model == 'faster_rcnn':
+            processing_tasks.start_task('Cropping bounding box image for Faster R-CNN model')
+            logging_info('')
+            logging_info('4.3) Cropping bounding box image for Faster R-CNN model' + LINE_FEED)
+            crop_bbox_list_for_faster_rcnn_model(parameters, 
                                                 train_bbox_list, 
                                                 valid_bbox_list, 
                                                 test_bbox_list,
                                                 processing_statistics)
-                                        
-    if 'faster_rcnn' in processing_parameters['models']:
-        logging_info('')
-        logging_info('4.3) Cropping bounding box image for Faster R-CNN model' + LINE_FEED)
-        print('4.3) Cropping bounding box image for Faster R-CNN model' + LINE_FEED)
-        crop_bbox_list_for_faster_rcnn_model(processing_parameters, 
-                                             train_bbox_list, 
-                                             valid_bbox_list, 
-                                             test_bbox_list,
-                                             processing_statistics)
+            processing_tasks.finish_task('Cropping bounding box image for Faster R-CNN model')
 
-    if 'yolov8' in processing_parameters['models']:
-        logging_info('')
-        logging_info('4.4) Cropping bounding box image for YOLOv8 model' + LINE_FEED)
-        print('4.4) Cropping bounding box image for YOLOv8 model' + LINE_FEED)
-        crop_bbox_list_for_yolo_v8_model(processing_parameters,
-                                         train_bbox_list, 
-                                         valid_bbox_list, 
-                                         test_bbox_list,
-                                         processing_statistics)
+        if model == 'yolov8':
+            processing_tasks.start_task('Cropping bounding box image for YOLOv8 model')
+            logging_info('')
+            logging_info('4.4) Cropping bounding box image for YOLOv8 model' + LINE_FEED)
+            crop_bbox_list_for_yolo_v8_model(parameters,
+                                            train_bbox_list, 
+                                            valid_bbox_list, 
+                                            test_bbox_list,
+                                            processing_statistics)
+            processing_tasks.finish_task('Cropping bounding box image for YOLOv8 model')
         
     # zipping ouput diretories 
-    logging_info('')
-    logging_info('5) Zipping output folders' + LINE_FEED)
-    print('5) Zipping output folders' + LINE_FEED)
-    zip_output_folders(processing_parameters)
+    if parameters['input']['create_zipfile']:    
+        processing_tasks.start_task('Zipping outpu directories')
+        logging_info('')
+        logging_info('5) Zipping output folders' + LINE_FEED)
+        zip_output_folders(parameters)
+        processing_tasks.finish_task('Zipping outpu directories')
 
     # logging processing statistics 
     logging_info('')
     logging_info('6) Processing statistics' + LINE_FEED)
-    print('6) Processing statistics' + LINE_FEED)
-    log_processing_statistics(processing_parameters,
+    log_processing_statistics(parameters,
                               processing_statistics)
 
     # end of processing   
     logging_info('')
-    logging_info('End of processing')
-    print('End of processing')
+    logging_info('Finished the cropping bouding boxes by images' + LINE_FEED)
 
+    # printing tasks summary 
+    processing_tasks.finish_processing()
+    logging_info(processing_tasks.to_string())
 
 # ###########################################
 # Methods of Level 2
 # ###########################################
 
-def set_processing_parameters():
+def get_parameters(full_path_project, parameters_filename):
     '''
-    Set dictionary parameters for processing
+    Get dictionary parameters for processing
     '''    
-    processing_parameters = {}
-
-    # setting spliting criteria for the image dataset
-    processing_parameters['image_dataset_spliting_criteria'] = 'images'
-    # processing_parameters['image_dataset_spliting_criteria'] = 'bounding_boxes'
-    
-    # setting models to prepare images 
-    # processing_parameters['models'] = ['ssd', 'ssd_pascal_voc', 'faster_rcnn', 'yolov8']
-    # processing_parameters['models'] = ['ssd']
-    processing_parameters['models'] = ['ssd_pascal_voc']
-    # processing_parameters['models'] = ['faster_rcnn']
-    # processing_parameters['models'] = ['yolov8']
-    # processing_parameters['models'] = []
-
-    # setting the classes selected to crop annotations     
-    # processing_parameters["classes"] = ['Coal', 'Mature Sclerotium', 'Imature Sclerotium', 'Disease White Mold', 'Apothecium', 'Petal', 'Mushroom']
-    processing_parameters["classes"] = ['Mature Sclerotium', 'Imature Sclerotium', 'White Mold', 'Apothecium']
-    # processing_parameters['classes'] = ['Apothecium']    
-    
-    # setting dimensions for cropping original images 
-    # processing_parameters['dimensions'] = [(64,64), (128,128), (256,256), (512,512), (1024,1024)]
-    # processing_parameters['dimensions'] = [(224,224)]
-    # processing_parameters['dimensions'] = [(256,256)]
-    processing_parameters['dimensions'] = [(256,256)]
-
-    # setting percent for split training, validation and testing datasets
-    processing_parameters['split_dataset'] = {
-        'train' : 70,
-        'valid' : 20,
-        'test' : 10,
-        }
-
-    # setting percent for split training, validation and testing datasets
-    processing_parameters['bounding_box'] = {
-        'draw_and_save' : True,
-        }
-    
-    # logging processing parameters
-    logging_info(f"Image dataset spliting criteria: {processing_parameters['image_dataset_spliting_criteria']}")
-    models = [item for item in processing_parameters['models']]
-    logging_info(f"Models: {models}")
-    classes = [item for item in processing_parameters['classes']]
-    logging_info(f"Classes: {classes}")
-    dimensions = [item for item in processing_parameters['dimensions']]
-    logging_info(f"Dimensions: {dimensions}")
-    logging_info(f"Spliting percentage for image dataset:")
-    total_split = processing_parameters['split_dataset']['train'] + \
-                  processing_parameters['split_dataset']['valid'] + \
-                  processing_parameters['split_dataset']['test']
-    logging_info(f"  train: {processing_parameters['split_dataset']['train']}%")
-    logging_info(f"  valid: {processing_parameters['split_dataset']['valid']}%")
-    logging_info(f"  test : {processing_parameters['split_dataset']['test']}%")
-    logging_info(f"  total: {total_split}%")
-    logging_info(f"Draw bbox and save new image: {processing_parameters['bounding_box']['draw_and_save']}" + LINE_FEED)
+    # getting parameters 
+    path_and_parameters_filename = os.path.join(full_path_project, parameters_filename)
+    parameters = Utils.read_json_parameters(path_and_parameters_filename)
     
     # returning parameters 
-    return processing_parameters
+    return parameters
 
-def set_processing_statistics(processing_parameters):
+def get_running_id(parameters):
+    '''
+    Get last running id to calculate the current id
+    '''    
+
+    # setting control filename 
+    running_control_filename = os.path.join(
+        parameters['processing']['research_root_folder'],
+        parameters['processing']['project_name_folder'],
+        parameters['processing']['running_control_filename'],
+    )
+
+    # getting control info 
+    running_control = Utils.read_json_parameters(running_control_filename)
+
+    # calculating the current running id 
+    running_control['last_running_id'] = int(running_control['last_running_id']) + 1
+
+    # updating running control file 
+    running_id = int(running_control['last_running_id'])
+
+    # saving file 
+    Utils.save_text_file(running_control_filename, \
+                         Utils.get_pretty_json(running_control), 
+                         NEW_FILE)
+
+    # updating running id in the processing parameters 
+    parameters['processing']['running_id'] = running_id
+ 
+    # returning running id 
+    return running_id
+
+def set_results_folder(parameters):
+    '''
+    Set folder name of output results
+    '''
+    
+    # setting runnig id text 
+    running_id = parameters['processing']['running_id']
+    running_id_text = 'running-' + f'{running_id:04}'
+    parameters['results']['running_folder'] = running_id_text
+
+    # creating results folders 
+    running_folder = os.path.join(
+        parameters['processing']['research_root_folder'],     
+        parameters['input']['main_dataset_folder'],
+        parameters['results']['main_folder'],
+        parameters['results']['running_folder'],
+    )
+    parameters['results']['running_folder'] = running_folder
+    Utils.create_directory(running_folder)
+
+    # setting and creating log folder 
+    log_folder = os.path.join(
+        running_folder,
+        parameters['results']['log_folder'],
+    )
+    parameters['results']['log_folder'] = log_folder
+    Utils.create_directory(log_folder)
+
+    # setting and creating parameter folder 
+    processing_parameters_folder = os.path.join(
+        running_folder,
+        parameters['results']['processing_parameters_folder'],
+    )
+    parameters['results']['processing_parameters_folder'] = processing_parameters_folder
+    Utils.create_directory(processing_parameters_folder)
+
+    # setting and creating all images folder 
+    all_images = os.path.join(
+        running_folder,
+        parameters['results']['all_images'],
+    )
+    parameters['results']['all_images'] = all_images
+    Utils.create_directory(all_images)
+
+    # setting and creating splitting dataset folder
+    if  parameters['input']['image_dataset_spliting_criteria'] == 'images':
+        criteria_splitting = parameters['results']['criteria_splitting']['images']
+    else:
+        criteria_splitting = parameters['results']['criteria_splitting']['bounding_boxes']
+    splitting_dataset_folder = os.path.join(
+        running_folder,
+        criteria_splitting,
+    )
+    parameters['results']['splitting_dataset']['splitting_dataset_folder'] = splitting_dataset_folder
+    Utils.create_directory(splitting_dataset_folder)   
+
+    list_folder = os.path.join(
+        splitting_dataset_folder,
+        parameters['results']['splitting_dataset']['list_folder'],
+    )
+    parameters['results']['splitting_dataset']['list_folder'] = list_folder
+    Utils.create_directory(list_folder)
+
+    output_dataset_folder = os.path.join(
+        splitting_dataset_folder,
+        parameters['results']['output_dataset']['output_dataset_folder'],
+    )
+    parameters['results']['output_dataset']['output_dataset_folder'] = output_dataset_folder
+    Utils.create_directory(output_dataset_folder)
+
+    # setting and creating models and image size folder folder
+    for model in parameters['input']['models']:
+        if model == 'ssd':
+            set_ssd_model_folders(parameters)
+
+        if model == 'ssd_pascal_voc':
+            set_ssd_model_with_pascal_voc_format_folders(parameters)
+
+        if model == 'faster_rcnn':
+            set_faster_rcnn_model_folders(parameters)            
+
+        if model == 'yolov8':
+            set_yolov8_model_folders(parameters)            
+
+    # setting and creating folder of zipped files
+    if parameters['input']['create_zipfile']:    
+        zip_main_folder = os.path.join(
+            splitting_dataset_folder,
+            parameters['results']['output_dataset']['zip']['main_folder'],
+        )
+        parameters['results']['output_dataset']['zip']['main_folder'] = zip_main_folder
+        Utils.create_directory(zip_main_folder)
+
+def save_processing_parameters(parameters_filename, parameters):
+    '''
+    Update parameters file of the processing
+    '''    
+    # setting full path and log folder  to write parameters file 
+    path_and_parameters_filename = os.path.join(
+        parameters['results']['processing_parameters_folder'], 
+        parameters_filename)
+
+    # saving current processing parameters in the log folder 
+    Utils.save_text_file(path_and_parameters_filename, \
+                        Utils.get_pretty_json(parameters), 
+                        NEW_FILE)
+
+def set_processing_statistics(parameters):
     '''
     Set dictionary for the processing statistics
     '''  
@@ -226,19 +362,21 @@ def set_processing_statistics(processing_parameters):
     processing_statistics['original_image_size'] = {}
 
     # buiding dicionary 
-    for model in processing_parameters['models']:
+    for model in parameters['input']['models']:
         processing_statistics['models'][model] = {}
-        for heigth, width in processing_parameters['dimensions']:
-            processing_statistics['models'][model][heigth] = {}
-            processing_statistics['models'][model][heigth]['train'] = {}
-            processing_statistics['models'][model][heigth]['train']['success'] = 0
-            processing_statistics['models'][model][heigth]['train']['error'] = 0
-            processing_statistics['models'][model][heigth]['valid'] = {}
-            processing_statistics['models'][model][heigth]['valid']['success'] = 0
-            processing_statistics['models'][model][heigth]['valid']['error'] = 0
-            processing_statistics['models'][model][heigth]['test'] = {}
-            processing_statistics['models'][model][heigth]['test']['success'] = 0
-            processing_statistics['models'][model][heigth]['test']['error'] = 0
+        for item in parameters['input']['dimensions']:
+            height = item['height']
+            width  = item['width']
+            processing_statistics['models'][model][height] = {}
+            processing_statistics['models'][model][height]['train'] = {}
+            processing_statistics['models'][model][height]['train']['success'] = 0
+            processing_statistics['models'][model][height]['train']['error'] = 0
+            processing_statistics['models'][model][height]['valid'] = {}
+            processing_statistics['models'][model][height]['valid']['success'] = 0
+            processing_statistics['models'][model][height]['valid']['error'] = 0
+            processing_statistics['models'][model][height]['test'] = {}
+            processing_statistics['models'][model][height]['test']['success'] = 0
+            processing_statistics['models'][model][height]['test']['error'] = 0
 
     # returning processing statistics
     return processing_statistics
@@ -309,33 +447,43 @@ def create_working_folders(processing_parameters):
     # Zip folder for model processing results
     Utils.create_directory(parameter.ZIP_PATH)
 
-def zip_output_folders(processing_parameters):
+def zip_output_folders(parameters):
     # create zip files from output directories
 
-    for model in processing_parameters['models']:
-        for height, width in processing_parameters['dimensions']:
+    for model in parameters['input']['models']:        
+        for item in parameters['input']['dimensions']:
+            height = item['height']
+            width  = item['width']
 
             logging_info(f'Creating zipfile of image dataset ...')
 
-            source_directory = os.path.join(parameter.OUTPUT_MODEL_PATH,
-                                            model, str(height) + 'x' + str(width))            
-            output_filename = os.path.join(parameter.ZIP_PATH,
-                                           parameter.ZIP_FILENAME + 
-                                           '_' + model + '_' + str(height) + 'x' + str(width))
+            if model == 'ssd': output_dataset_model_key = 'ssd_model'
+            if model == 'ssd_pascal_voc': output_dataset_model_key = 'ssd_model_with_pascal_voc_format'
+            if model == 'faster_rcnn': output_dataset_model_key = 'faster_rcnn_model'
+            if model == 'yolov8': output_dataset_model_key = 'yolov8_model'
+            
+            source_directory = os.path.join(
+                parameters['results']['output_dataset'][output_dataset_model_key]['main_folder'],
+                str(height) + 'x' + str(width),
+            )
+            # source_directory = os.path.join(parameter.OUTPUT_MODEL_PATH,
+            #                                 model, str(height) + 'x' + str(width))            
+            output_filename = os.path.join(
+                parameters['results']['output_dataset']['zip']['main_folder'],
+                parameters['results']['output_dataset']['zip']['filename'] + '_' + model + '_' + str(height) + 'x' + str(width)
+            )
+            # output_filename = os.path.join(parameter.ZIP_PATH,
+            #                                parameter.ZIP_FILENAME + 
+            #                                '_' + model + '_' + str(height) + 'x' + str(width))
             result, full_output_filename = Utils.zip_directory(source_directory, output_filename)
             if result:
-                print(f'Zipfile of image dataset')
-                print()
-                print(f'Source directory: {source_directory}')
-                print(f'Output filename : {full_output_filename}')
-
                 logging_info(f'Zipfile of image dataset')
                 logging_info(f'Source directory: {source_directory}')
                 logging_info(f'Output filename : {full_output_filename}')
             else:
                 logging_error(f'Error in creating of the zipfile of image dataset!')
 
-def log_processing_statistics(processing_parameters, 
+def log_processing_statistics(parameters, 
                               processing_statistics):
 
     # inicitializing counters 
@@ -343,29 +491,32 @@ def log_processing_statistics(processing_parameters,
     # total_of_error = 0
 
     # logging processing statistics 
-    for model in processing_parameters['models']:          
-        for heigth, width in processing_parameters['dimensions']:
+    for model in parameters['input']['models']:        
+        for item in parameters['input']['dimensions']:
+            height = item['height']
+            width  = item['width']
+
             model_total_of_success = 0
             model_total_of_error = 0
 
-            number_of_success = processing_statistics['models'][model][heigth]['train']['success']
-            number_of_error   = processing_statistics['models'][model][heigth]['train']['error'] 
+            number_of_success = processing_statistics['models'][model][height]['train']['success']
+            number_of_error   = processing_statistics['models'][model][height]['train']['error'] 
             model_total_of_success  += number_of_success
             model_total_of_error    += number_of_error
-            logging_info(f'{model} - {heigth} - train - success: {number_of_success}  error : {number_of_error}')
+            logging_info(f'{model} - {height} - train - success: {number_of_success}  error : {number_of_error}')
 
-            number_of_success = processing_statistics['models'][model][heigth]['valid']['success']
-            number_of_error   = processing_statistics['models'][model][heigth]['valid']['error'] 
+            number_of_success = processing_statistics['models'][model][height]['valid']['success']
+            number_of_error   = processing_statistics['models'][model][height]['valid']['error'] 
             model_total_of_success  += number_of_success
             model_total_of_error    += number_of_error
-            logging_info(f'{model} - {heigth} - valid - success: {number_of_success}  error : {number_of_error}')
+            logging_info(f'{model} - {height} - valid - success: {number_of_success}  error : {number_of_error}')
 
-            number_of_success = processing_statistics['models'][model][heigth]['test']['success']
-            number_of_error   = processing_statistics['models'][model][heigth]['test']['error'] 
+            number_of_success = processing_statistics['models'][model][height]['test']['success']
+            number_of_error   = processing_statistics['models'][model][height]['test']['error'] 
             model_total_of_success  += number_of_success
             model_total_of_error    += number_of_error
-            logging_info(f'{model} - {heigth} - test  - success: {number_of_success}  error : {number_of_error}')
-            logging_info(f'{model} - {heigth} - total - success: {model_total_of_success}  error : {model_total_of_error}')
+            logging_info(f'{model} - {height} - test  - success: {number_of_success}  error : {number_of_error}')
+            logging_info(f'{model} - {height} - total - success: {model_total_of_success}  error : {model_total_of_error}')
             logging_info(f'')
 
         # logging_info(f'')
@@ -378,7 +529,7 @@ def log_processing_statistics(processing_parameters,
     # logging_info(f'Total - success: {total_of_success}  error : {total_of_error}')
 
     logging_info(f'')
-    logging_info(f'Statistics of original image size (heigth and width)')
+    logging_info(f'Statistics of original image size (height and width)')
     logging_info(f'')
     total_of_original_images = 0
     for key in processing_statistics['original_image_size']:
@@ -386,6 +537,238 @@ def log_processing_statistics(processing_parameters,
         total_of_original_images += processing_statistics['original_image_size'].get(key)
 
     logging_info(f'Total of original images: {total_of_original_images}')
+
+
+
+# ###########################################
+# Methods of Level 3
+# ###########################################
+
+def set_ssd_model_folders(parameters):
+    '''
+    Create folder for results of SSD model 
+    '''    
+
+    model_folder = os.path.join(
+        parameters['results']['output_dataset']['output_dataset_folder'],
+        parameters['results']['output_dataset']['ssd_model']['main_folder'],
+    )
+    parameters['results']['output_dataset']['ssd_model']['main_folder'] = model_folder
+    Utils.create_directory(model_folder)
+
+    for item in parameters['input']['dimensions']:            
+        height = item['height']
+        width  = item['width']
+
+        # train folder 
+        folder = os.path.join(
+            model_folder,
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model']['train_folder']
+        )
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['ssd_model']['bounding_box_folder']
+            )             
+            Utils.create_directory(bbox_folder)
+
+        folder = os.path.join(
+            model_folder,
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model']['valid_folder']
+        )   
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['ssd_model']['bounding_box_folder']
+            ) 
+            Utils.create_directory(bbox_folder)
+
+        folder = os.path.join(
+            model_folder,
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model']['test_folder']
+        )   
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['ssd_model']['bounding_box_folder']
+            )
+            Utils.create_directory(bbox_folder)
+
+
+def set_ssd_model_with_pascal_voc_format_folders(parameters):
+    '''
+    Create folder for results of SSD model 
+    '''    
+
+    model_folder = os.path.join(
+        parameters['results']['output_dataset']['output_dataset_folder'],
+        parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['main_folder'],
+    )
+    parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['main_folder'] = model_folder
+    Utils.create_directory(model_folder)
+
+    for item in parameters['input']['dimensions']:            
+        height = item['height']
+        width  = item['width']
+
+        # train folder 
+        folder = os.path.join(
+            model_folder,
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['train_folder']
+        )
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['bounding_box_folder']
+            )             
+            Utils.create_directory(bbox_folder)
+
+        folder = os.path.join(
+            model_folder,
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['valid_folder']
+        )   
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['bounding_box_folder']
+            )             
+            Utils.create_directory(bbox_folder)
+
+        folder = os.path.join(
+            model_folder,
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['test_folder']
+        )   
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['bounding_box_folder']
+            )             
+            Utils.create_directory(bbox_folder)
+
+def set_faster_rcnn_model_folders(parameters):
+    '''
+    Create folder for results of Faster RCNN model 
+    '''    
+
+    model_folder = os.path.join(
+        parameters['results']['output_dataset']['output_dataset_folder'],
+        parameters['results']['output_dataset']['faster_rcnn_model']['main_folder'],
+    )
+    parameters['results']['output_dataset']['faster_rcnn_model']['main_folder'] = model_folder
+    Utils.create_directory(model_folder)
+
+    for item in parameters['input']['dimensions']:            
+        height = item['height']
+        width  = item['width']
+
+        # train folder 
+        folder = os.path.join(
+            model_folder,
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['faster_rcnn_model']['train_folder']
+        )
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['faster_rcnn_model']['bounding_box_folder']
+            )             
+            Utils.create_directory(bbox_folder)
+
+        folder = os.path.join(
+            model_folder,
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['faster_rcnn_model']['valid_folder']
+        )   
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['faster_rcnn_model']['bounding_box_folder']
+            )             
+            Utils.create_directory(bbox_folder)
+
+        folder = os.path.join(
+            model_folder,
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['faster_rcnn_model']['test_folder']
+        )   
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['faster_rcnn_model']['bounding_box_folder']
+            )             
+            Utils.create_directory(bbox_folder)
+
+
+def set_yolov8_model_folders(parameters):
+    '''
+    Create folder for results of Faster RCNN model 
+    '''    
+
+    model_folder = os.path.join(
+        parameters['results']['output_dataset']['output_dataset_folder'],
+        parameters['results']['output_dataset']['yolov8_model']['main_folder'],
+    )
+    parameters['results']['output_dataset']['yolov8_model']['main_folder'] = model_folder
+    Utils.create_directory(model_folder)
+
+    for item in parameters['input']['dimensions']:            
+        height = item['height']
+        width  = item['width']
+
+        # train folder 
+        folder = os.path.join(
+            model_folder,
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['yolov8_model']['train_folder']
+        )
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['yolov8_model']['bounding_box_folder']
+            )             
+            Utils.create_directory(bbox_folder)
+
+        folder = os.path.join(
+            model_folder,
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['yolov8_model']['valid_folder']
+        )   
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['yolov8_model']['bounding_box_folder']
+            )             
+            Utils.create_directory(bbox_folder)
+
+        folder = os.path.join(
+            model_folder,
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['yolov8_model']['test_folder']
+        )   
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['yolov8_model']['bounding_box_folder']
+            )             
+            Utils.create_directory(bbox_folder)
 
 # ###########################################
 # Main method

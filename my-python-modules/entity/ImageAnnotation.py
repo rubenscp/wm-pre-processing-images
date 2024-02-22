@@ -214,7 +214,7 @@ class ImageAnnotation:
         for bounding_box in self.bounding_boxes:
 
             # annotation_text += bounding_box.get_id_class_SSD()
-            bbox_class_id= 0
+            bbox_class_id = bounding_box.get_id_class_SSD()
 
             # calculating the central point of bounding box 
             bbox_center_x_col = bounding_box.col_point1 + (bounding_box.col_point2 - bounding_box.col_point1) / 2.0

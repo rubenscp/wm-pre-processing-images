@@ -22,7 +22,7 @@ import numpy as np
 from manage_log import *
 from utils import Utils
 from random import randrange
-import parameter as parameter 
+# import parameter as parameter 
 
 # Importing entity classes
 from entity.ImageAnnotation import ImageAnnotation
@@ -43,56 +43,67 @@ np.random.seed(19680801)
 # Methods of Level 1
 # ###########################################
 
-def create_bbox_list_from_original_dataset(processing_parameters, processing_statistics):
+def create_bbox_list_from_original_dataset(parameters, processing_statistics):
     '''
     Create list of bounding box from original annotated images and 
     split list for training, validation and testing according parameters.
     '''
 
     # creating list of images with bounding boxes selected
-    images_with_annotations = create_lists_image_original_dataset(processing_parameters, processing_statistics)
+    images_with_annotations = create_lists_image_original_dataset(parameters, processing_statistics)
 
     # creating list of bounding box images splitted into training, validation and 
     # testing according by parameters 
 
     # selecting criteria for split all the images dataset 
-    if processing_parameters['image_dataset_spliting_criteria'] == 'images':
-        logging_info('3) Splitting original image dataset according by the images criteria' + LINE_FEED)
-        print('3) Splitting original image dataset according by the images criteria' + LINE_FEED)
+    if parameters['input']['image_dataset_spliting_criteria'] == 'images':
+        logging_info('')
+        logging_info('Splitting original image dataset according by the images criteria')
+        logging_info('')
         all_bbox_list, train_bbox_list, valid_bbox_list, test_bbox_list = \
-            create_lists_splitting_by_images(processing_parameters, images_with_annotations)
+            create_lists_splitting_by_images(parameters, images_with_annotations)
 
-    elif processing_parameters['image_dataset_spliting_criteria'] == 'bounding_boxes':
-        logging_info('3) Splitting original image dataset according by the bounding boxes criteria' + LINE_FEED)
-        print('3) Splitting original image dataset according by the bounding boxes criteria' + LINE_FEED)
+    elif parameters['input']['image_dataset_spliting_criteria'] == 'bounding_boxes':
+        logging_info('')
+        logging_info('Splitting original image dataset according by the bounding boxes criteria')
+        logging_info('')
         all_bbox_list, train_bbox_list, valid_bbox_list, test_bbox_list = \
-            create_lists_splitting_by_bounding_boxes(processing_parameters, images_with_annotations)
+            create_lists_splitting_by_bounding_boxes(parameters, images_with_annotations)
 
     else:   
-        logging_info('3) No valid criteria for splitting original image dataset' + LINE_FEED)
-        print('3) No valid criteria for splitting original image dataset' + LINE_FEED)
+        logging_info('')
+        logging_info('No valid criteria for splitting original image dataset' + LINE_FEED)
+        logging_info('')
         return None, None, None, None, None, None, 
 
     # draw violin plot of bounding boxes
-    violin_plot_filename = os.path.join(parameter.OUTPUT_SPLIT_DATASET_PATH, 
-                                        parameter.OUTPUT_SPLIT_DATASET_PATH_VIOLIN_PLOT)   
+    violin_plot_filename = os.path.join(
+        parameters['results']['splitting_dataset']['splitting_dataset_folder'],
+        parameters['results']['splitting_dataset']['violin_plot_file']
+    )
     draw_violin_plot_of_bounding_boxes(all_bbox_list, violin_plot_filename)
 
     # saving lists 
-    train_filename = os.path.join(parameter.OUTPUT_SPLIT_DATASET_PATH, 
-                                    parameter.OUTPUT_SPLIT_DATASET_PATH_TRAIN_LIST)   
+    train_filename = os.path.join(
+        parameters['results']['splitting_dataset']['list_folder'],
+        parameters['results']['splitting_dataset']['train_list_file']
+    )
     save_bbox_lists(train_filename, train_bbox_list)
     train_bbox_df = evaluate_bounding_boxes_size(train_bbox_list)
     save_bbox_list_excel(train_filename, train_bbox_df)
 
-    valid_filename = os.path.join(parameter.OUTPUT_SPLIT_DATASET_PATH, 
-                                    parameter.OUTPUT_SPLIT_DATASET_PATH_VALID_LIST)   
+    valid_filename = os.path.join(
+        parameters['results']['splitting_dataset']['list_folder'],
+        parameters['results']['splitting_dataset']['valid_list_file']
+    )
     save_bbox_lists(valid_filename, valid_bbox_list)
     valid_bbox_df = evaluate_bounding_boxes_size(valid_bbox_list)
     save_bbox_list_excel(valid_filename, valid_bbox_df)
 
-    test_filename = os.path.join(parameter.OUTPUT_SPLIT_DATASET_PATH, 
-                                    parameter.OUTPUT_SPLIT_DATASET_PATH_TEST_LIST)   
+    test_filename = os.path.join(
+        parameters['results']['splitting_dataset']['list_folder'],
+        parameters['results']['splitting_dataset']['test_list_file']
+    )
     save_bbox_lists(test_filename, test_bbox_list)
     test_bbox_df = evaluate_bounding_boxes_size(test_bbox_list)
     save_bbox_list_excel(test_filename, test_bbox_df)
@@ -101,116 +112,11 @@ def create_bbox_list_from_original_dataset(processing_parameters, processing_sta
     return train_bbox_list, valid_bbox_list, test_bbox_list, \
             train_bbox_df, valid_bbox_df, test_bbox_df
 
-# def create_bbox_list_from_original_dataset_222222(processing_parameters, processing_statistics):
-
-#     # selecting criteria for split all the images dataset 
-#     if processing_parameters['image_dataset_spliting_criteria'] == 'images':
-#         logging_info('3) Splitting original image dataset according by the images criteria' + LINE_FEED)
-#         print('3) Splitting original image dataset according by the images criteria' + LINE_FEED)
-#         train_bbox_list, valid_bbox_list, test_bbox_list, \
-#         train_bbox_df, valid_bbox_df, test_bbox_df = \
-#             create_bbox_list_from_original_dataset_by_images(processing_parameters, processing_statistics)
-
-#     elif processing_parameters['image_dataset_spliting_criteria'] == 'bounding_boxes':
-#         logging_info('3) Splitting original image dataset according by the bounding boxes criteria' + LINE_FEED)
-#         print('3) Splitting original image dataset according by the bounding boxes criteria' + LINE_FEED)
-#         train_bbox_list, valid_bbox_list, test_bbox_list, \
-#         train_bbox_df, valid_bbox_df, test_bbox_df = \
-#             create_bbox_list_from_original_dataset_by_bounding_boxes(processing_parameters, processing_statistics)
-
-#     else:   
-#         logging_info('3) No valid criteria for splitting original image dataset' + LINE_FEED)
-#         print('3) No valid criteria for splitting original image dataset' + LINE_FEED)
-#         return None, None, None, None, None, None, 
-
-#     # returning list of bounding boxes splitted to be cropped for each model and dimensions 
-#     return train_bbox_list, valid_bbox_list, test_bbox_list, \
-#            train_bbox_df, valid_bbox_df, test_bbox_df
-
-# def create_bbox_list_from_original_dataset_by_images(processing_parameters, processing_statistics):
-#     '''
-#     Create list of bounding box from original annotated images and 
-#     split list for training, validation and testing from original images.
-#     '''
-
-#     # creating list of images with its bounding boxes
-#     images_with_annotations = create_lists_image_original_dataset(processing_parameters, processing_statistics)
-
-#     # creating list of bouding box images splitted into training, validation and 
-#     # testing according by parameters 
-#     all_bbox_list, train_bbox_list, valid_bbox_list, test_bbox_list = \
-#         create_lists_splitting_by_images(processing_parameters, images_with_annotations)
-
-#     # saving lists 
-#     train_filename = os.path.join(parameter.OUTPUT_SPLIT_DATASET_PATH, 
-#                                   parameter.OUTPUT_SPLIT_DATASET_PATH_TRAIN_LIST)   
-#     save_bbox_lists(train_filename, train_bbox_list)
-#     train_bbox_df = evaluate_bounding_boxes_size(train_bbox_list)
-#     save_bbox_list_excel(train_filename, train_bbox_df)
-
-#     valid_filename = os.path.join(parameter.OUTPUT_SPLIT_DATASET_PATH, 
-#                                   parameter.OUTPUT_SPLIT_DATASET_PATH_VALID_LIST)   
-#     save_bbox_lists(valid_filename, valid_bbox_list)
-#     valid_bbox_df = evaluate_bounding_boxes_size(valid_bbox_list)
-#     save_bbox_list_excel(valid_filename, valid_bbox_df)
-
-#     test_filename = os.path.join(parameter.OUTPUT_SPLIT_DATASET_PATH, 
-#                                  parameter.OUTPUT_SPLIT_DATASET_PATH_TEST_LIST)   
-#     save_bbox_lists(test_filename, test_bbox_list)
-#     test_bbox_df = evaluate_bounding_boxes_size(test_bbox_list)
-#     save_bbox_list_excel(test_filename, test_bbox_df)
-
-#     # returning list of bounding boxes splitted to be cropped for each model and dimensions 
-#     return train_bbox_list, valid_bbox_list, test_bbox_list, \
-#            train_bbox_df, valid_bbox_df, test_bbox_df
-
-# def create_bbox_list_from_original_dataset_by_bounding_boxes(processing_parameters, processing_statistics):
-#     '''
-#     Create list of bounding box from original annotated images and 
-#     split list for training, validation and testing according parameters.
-#     '''
-
-#     # creating list of images with bounding boxes selected
-#     images_with_annotations = create_lists_image_original_dataset(processing_parameters, processing_statistics)
-
-#     # creating list of bouding box images splitted into training, validation and 
-#     # testing according by parameters 
-#     all_bbox_list, train_bbox_list, valid_bbox_list, test_bbox_list = \
-#         create_lists_splitting_by_bounding_boxes(processing_parameters, images_with_annotations)
-    
-#     # draw violin plot of bounding boxes
-#     violin_plot_filename = os.path.join(parameter.OUTPUT_SPLIT_DATASET_PATH, 
-#                                         parameter.OUTPUT_SPLIT_DATASET_PATH_VIOLIN_PLOT)   
-#     draw_violin_plot_of_bounding_boxes(all_bbox_list, violin_plot_filename)
-
-#     # saving lists 
-#     train_filename = os.path.join(parameter.OUTPUT_SPLIT_DATASET_PATH, 
-#                                   parameter.OUTPUT_SPLIT_DATASET_PATH_TRAIN_LIST)   
-#     save_bbox_lists(train_filename, train_bbox_list)
-#     train_bbox_df = evaluate_bounding_boxes_size(train_bbox_list)
-#     save_bbox_list_excel(train_filename, train_bbox_df)
-
-#     valid_filename = os.path.join(parameter.OUTPUT_SPLIT_DATASET_PATH, 
-#                                   parameter.OUTPUT_SPLIT_DATASET_PATH_VALID_LIST)   
-#     save_bbox_lists(valid_filename, valid_bbox_list)
-#     valid_bbox_df = evaluate_bounding_boxes_size(valid_bbox_list)
-#     save_bbox_list_excel(valid_filename, valid_bbox_df)
-
-#     test_filename = os.path.join(parameter.OUTPUT_SPLIT_DATASET_PATH, 
-#                                  parameter.OUTPUT_SPLIT_DATASET_PATH_TEST_LIST)   
-#     save_bbox_lists(test_filename, test_bbox_list)
-#     test_bbox_df = evaluate_bounding_boxes_size(test_bbox_list)
-#     save_bbox_list_excel(test_filename, test_bbox_df)
-
-#     # returning list of bounding boxes splitted to be cropped for each model and dimensions 
-#     return train_bbox_list, valid_bbox_list, test_bbox_list, \
-#            train_bbox_df, valid_bbox_df, test_bbox_df
-
 # ###########################################
 # Methods of Level 2
 # ###########################################
 
-def create_lists_image_original_dataset(processing_parameters, processing_statistics):
+def create_lists_image_original_dataset(parameters, processing_statistics):
     '''
     Create lists of the images to be cropped according by format and dimensions 
     specified in the processing parameters.
@@ -222,28 +128,38 @@ def create_lists_image_original_dataset(processing_parameters, processing_statis
     # reading the original images in all datasets from Supervisely platform
 
     # setting input supervisely path 
-    input_supervisely_path = os.path.join(parameter.INPUT_PATH,
-                                          parameter.INPUT_SUPERVISELY_FORMAT)
-    
+    input_supervisely_path = os.path.join(
+        parameters['processing']['research_root_folder'],
+        parameters['input']['main_dataset_folder'],
+        parameters['input']['input_dataset_folder'],
+        parameters['input']['supervisely']['original_images_folder']
+    )
+     
     # getting list of image folders
     dataset_folders = Utils.get_folders(input_supervisely_path)
 
+    count = 0
     for dataset_folder in dataset_folders:
 
         # setting annotation folder name 
-        input_supervisely_image_path = os.path.join(input_supervisely_path, 
-                                              dataset_folder,
-                                              parameter.INPUT_SUPERVISELY_FORMAT_IMAGES)
+        input_supervisely_image_path = os.path.join(
+            input_supervisely_path,
+            dataset_folder,
+            parameters['input']['supervisely']['images']
+        )
 
-        input_supervisely_annotation_path = os.path.join(input_supervisely_path, 
-                                              dataset_folder,
-                                              parameter.INPUT_SUPERVISELY_FORMAT_ANNOTATIONS)
-              
+        input_supervisely_annotation_path = os.path.join(
+            input_supervisely_path, 
+            dataset_folder,
+            parameters['input']['supervisely']['annotations']
+        )  
+
         # getting annotation files 
         supervisely_annotation_files =  Utils.get_files_with_extensions(
             input_supervisely_annotation_path, '.json')
 
-        logging_info(f'Processing dataset folder: {dataset_folder} - {len(supervisely_annotation_files)} images')
+        count += 1
+        logging_info(f'Processing dataset folder #{count}: {dataset_folder} - {len(supervisely_annotation_files)} images')
 
         # processing one annotation file
         for supervisely_annotation_file in supervisely_annotation_files:
@@ -269,7 +185,7 @@ def create_lists_image_original_dataset(processing_parameters, processing_statis
                     image_filename_with_extension,
                     supervisely_annotation_file,                   
                     annotation_json,
-                    processing_parameters['classes'], 
+                    parameters['input']['classes'], 
                     dataset_folder)
     
             # adding image annotations if exist
@@ -283,18 +199,18 @@ def create_lists_image_original_dataset(processing_parameters, processing_statis
             # copying image and annotation files
             Utils.copy_file(image_filename_with_extension,
                             input_supervisely_image_path, 
-                            parameter.OUTPUT_ALL_IMAGES_AND_ANNOTATIONS)            
+                            parameters['results']['all_images'])            
             Utils.copy_file(supervisely_annotation_file,
                             input_supervisely_annotation_path, 
-                            parameter.OUTPUT_ALL_IMAGES_AND_ANNOTATIONS) 
+                            parameters['results']['all_images'])            
 
             # updating numbe of images at same size (height and width)
-            update_statistics_of_image_size(image_annotation, processing_statistics)        
+            # update_statistics_of_image_size(image_annotation, processing_statistics)        
 
     # returning list of images with bounding boxes selected according criterias
     return images_with_annotations
 
-def create_lists_splitting_by_images(processing_parameters, image_annotations):
+def create_lists_splitting_by_images(parameters, image_annotations):
     '''
     Create lists of the bbox images to be split according by processing parameters.
     '''
@@ -317,9 +233,9 @@ def create_lists_splitting_by_images(processing_parameters, image_annotations):
     all_bbox_list = create_bbox_list_from_image_annotations(image_annotations)
 
     # setting splitting percentages to train, validating and testing
-    train_percent = processing_parameters["split_dataset"]["train"]
-    valid_percent = processing_parameters["split_dataset"]["valid"]
-    test_percent  = processing_parameters["split_dataset"]["test"]
+    train_percent = parameters['input']['split_dataset']['train']
+    valid_percent = parameters['input']['split_dataset']['valid']
+    test_percent  = parameters['input']['split_dataset']['test']
     total_percent = train_percent + valid_percent + test_percent
 
     # calcuting amount of images for training, validation and tes dataset 
@@ -339,24 +255,23 @@ def create_lists_splitting_by_images(processing_parameters, image_annotations):
     train_image_annotations_list = split_image_list_randomly(all_image_annotations_list, number_of_train_image)    
     train_bbox_list = create_bbox_list_from_image_annotations(train_image_annotations_list)
 
-    logging_info('')
-    logging_info(f'Spliting estimated images of Original Image Dataset:')
-    logging_info(f'Training  : {processing_parameters["split_dataset"]["train"]}% >> ' + \
+    logging_info(f'Images estimated spliting of the Original Image Dataset:')
+    logging_info(f'Training  : {parameters["input"]["split_dataset"]["train"]} % - ' + \
                  f'{number_of_train_image} original images ' + \
-                 f'{len(train_bbox_list)} bbox images ')
-    logging_info(f'Validation: {processing_parameters["split_dataset"]["valid"]}% >> ' + \
+                 f'with {len(train_bbox_list)} bbox images ')
+    logging_info(f'Validation: {parameters["input"]["split_dataset"]["valid"]} % - ' + \
                  f'{number_of_valid_image} original images ' + \
-                 f'{len(valid_bbox_list)} bbox images ')
-    logging_info(f'Test      : {processing_parameters["split_dataset"]["test"]}% >> ' + \
+                 f'with {len(valid_bbox_list)} bbox images ')
+    logging_info(f'Test      : {parameters["input"]["split_dataset"]["test"]} % - ' + \
                  f'{number_of_test_image} original images ' + \
-                 f'{len(test_bbox_list)} bbox images ')
-    logging_info(f'Total     : {total_percent}% >> {len(image_annotations)} images ' + \
-                 f'{len(train_bbox_list) + len(valid_bbox_list) + len(test_bbox_list)} bbox images ' + LINE_FEED)
+                 f'with {len(test_bbox_list)} bbox images ')
+    logging_info(f'Total     : {total_percent} % - {len(image_annotations)} original images ' + \
+                 f'with {len(train_bbox_list) + len(valid_bbox_list) + len(test_bbox_list)} bbox images ' + LINE_FEED)
 
     # returning list of bbox 
     return all_bbox_list, train_bbox_list, valid_bbox_list, test_bbox_list
 
-def create_lists_splitting_by_bounding_boxes(processing_parameters, image_annotations):
+def create_lists_splitting_by_bounding_boxes(parameters, image_annotations):
     '''
     Create lists of the bbox images to be split according by processing parameters.
     '''
@@ -369,10 +284,7 @@ def create_lists_splitting_by_bounding_boxes(processing_parameters, image_annota
 
     # creating list of all bounding boxes of all image datasets
     all_bbox_list = create_bbox_list_from_image_annotations(image_annotations)
-    # for image_annotation in image_annotations:
-    #     for bounding_box in image_annotation.bounding_boxes:
-    #         all_bbox_list.append([bounding_box, image_annotation])
-
+  
     # copying all bbox list to return 
     all_bbox_list_to_return = all_bbox_list.copy()
 
@@ -383,9 +295,9 @@ def create_lists_splitting_by_bounding_boxes(processing_parameters, image_annota
     all_bbox_df = evaluate_bounding_boxes_size(all_bbox_list)
     save_bbox_list_excel(all_filename, all_bbox_df)
 
-    train_percent = processing_parameters["split_dataset"]["train"]
-    valid_percent = processing_parameters["split_dataset"]["valid"]
-    test_percent  = processing_parameters["split_dataset"]["test"]
+    train_percent = parameters["split_dataset"]["train"]
+    valid_percent = parameters["split_dataset"]["valid"]
+    test_percent  = parameters["split_dataset"]["test"]
     total_percent = train_percent + valid_percent + test_percent
 
     # calcuting amount of images for training, validation and tes dataset 
@@ -395,10 +307,10 @@ def create_lists_splitting_by_bounding_boxes(processing_parameters, image_annota
 
     logging_info('')
     logging_info(f'Spliting estimated of Bounding Boxes of Original Image Dataset:')
-    logging_info(f'Training  : {processing_parameters["split_dataset"]["train"]}% >> {number_of_train_bbox} cropped images')
-    logging_info(f'Validation: {processing_parameters["split_dataset"]["valid"]}% >> {number_of_valid_bbox} cropped images')
-    logging_info(f'Test      : {processing_parameters["split_dataset"]["test"]}% >> {number_of_test_bbox} cropped images')
-    logging_info(f'Total     : {str(total_percent)}% >> {len(all_bbox_list)} images' + LINE_FEED)
+    logging_info(f'Training  : {parameters["split_dataset"]["train"]}% >> {number_of_train_bbox} cropped images')
+    logging_info(f'Validation: {parameters["split_dataset"]["valid"]}% >> {number_of_valid_bbox} cropped images')
+    logging_info(f'Test      : {parameters["split_dataset"]["test"]}% >> {number_of_test_bbox} cropped images')
+    logging_info(f'Total     : {str(total_percent)} % >> {len(all_bbox_list)} images' + LINE_FEED)
 
     # spliting bbox for test 
     test_bbox_list = split_bbox_list_randomly(all_bbox_list, number_of_test_bbox)

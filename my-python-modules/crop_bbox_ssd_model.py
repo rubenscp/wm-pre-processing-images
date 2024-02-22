@@ -11,7 +11,6 @@ Version: 1.0
 """
 
 # Importing libraries
-import json
 import os
 
 # Importing python modules
@@ -19,7 +18,6 @@ from manage_log import *
 from utils import Utils
 from image_utils import ImageUtils
 from random import randrange
-import parameter as parameter 
 
 # Importing entity classes
 from entity.ImageAnnotation import ImageAnnotation
@@ -28,6 +26,7 @@ from entity.ImageAnnotation import ImageAnnotation
 # Constants
 # ###########################################
 LINE_FEED = '\n'
+NEW_FILE = True
 
 # ###########################################
 # Application Methods
@@ -38,45 +37,51 @@ LINE_FEED = '\n'
 # ###########################################
 
 def crop_bbox_list_for_ssd_model(
-        processing_parameters, 
+        parameters, 
         train_bbox_list, valid_bbox_list, test_bbox_list, 
         processing_statistics):
     
     # creating working folders 
-    create_working_folders(processing_parameters)
+    create_working_folders(parameters)
 
     # cropping bbox images from train, valid and test lists    
-    for height, width in processing_parameters['dimensions']:
+    for item in parameters['input']['dimensions']:
+        height = item['height']
+        width  = item['width']
 
         logging_info('')
-        logging_info(f'SSD Model - processing cropping window (HxW): ({height},{width})' + LINE_FEED)
+        logging_info(f'SSD Model - processing cropping window (HxW): ({height},{width})')
+        logging_info(f'-'*50 + LINE_FEED)
 
-        target_folder = os.path.join(parameter.OUTPUT_MODEL_PATH, 
-                                     parameter.SSD_MODEL_FOLDER, 
-                                     str(height) + 'x' + str(width),
-                                     parameter.SSD_MODEL_TRAIN)       
+        target_folder = os.path.join(
+            parameters['results']['output_dataset']['ssd_model']['main_folder'],
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model']['train_folder']
+        )
         number_of_sucess, number_of_errors = \
-            crop_bbox_images_from_list(processing_parameters, train_bbox_list, 
+            crop_bbox_images_from_list(parameters, train_bbox_list, 
                                        height, width, target_folder)
         processing_statistics['models']['ssd'][height]['train']['success'] = number_of_sucess
         processing_statistics['models']['ssd'][height]['train']['error']   = number_of_errors
         
-        target_folder = os.path.join(parameter.OUTPUT_MODEL_PATH, 
-                                     parameter.SSD_MODEL_FOLDER, 
-                                     str(height) + 'x' + str(width),
-                                     parameter.SSD_MODEL_VALID)       
+        target_folder = os.path.join(
+            parameters['results']['output_dataset']['ssd_model']['main_folder'],
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model']['valid_folder']
+        )      
         number_of_sucess, number_of_errors = \
-            crop_bbox_images_from_list(processing_parameters, valid_bbox_list, 
+            crop_bbox_images_from_list(parameters, valid_bbox_list, 
                                        height, width, target_folder)
         processing_statistics['models']['ssd'][height]['valid']['success'] = number_of_sucess
         processing_statistics['models']['ssd'][height]['valid']['error']   = number_of_errors
 
-        target_folder = os.path.join(parameter.OUTPUT_MODEL_PATH, 
-                                     parameter.SSD_MODEL_FOLDER, 
-                                     str(height) + 'x' + str(width),
-                                     parameter.SSD_MODEL_TEST)  
+        target_folder = os.path.join(
+            parameters['results']['output_dataset']['ssd_model']['main_folder'],
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model']['test_folder']
+        )
         number_of_sucess, number_of_errors = \
-            crop_bbox_images_from_list(processing_parameters, test_bbox_list, 
+            crop_bbox_images_from_list(parameters, test_bbox_list, 
                                        height, width, target_folder)
         processing_statistics['models']['ssd'][height]['test']['success'] = number_of_sucess
         processing_statistics['models']['ssd'][height]['test']['error']   = number_of_errors
@@ -86,52 +91,77 @@ def crop_bbox_list_for_ssd_model(
 # ###########################################
 
 # Create all working folders 
-def create_working_folders(processing_parameters):
+# Create all working folders 
+def create_working_folders(parameters):
 
     # creating output folders
-    for height, width in processing_parameters['dimensions']:
-        folder = os.path.join(parameter.OUTPUT_MODEL_PATH, parameter.SSD_MODEL_FOLDER, 
-                              str(height) + 'x' + str(width),
-                              parameter.SSD_MODEL_TRAIN)
-        image_folder = os.path.join(folder, parameter.SSD_MODEL_IMAGES)
-        Utils.remove_directory(image_folder)
-        Utils.create_directory(image_folder)
-        if processing_parameters['bounding_box']['draw_and_save']:
-            bbox_folder = os.path.join(folder, parameter.SSD_MODEL_BBOX)
+    for item in parameters['input']['dimensions']:
+        height = item['height']
+        width  = item['width']
+        folder = os.path.join(
+            parameters['results']['output_dataset']['output_dataset_folder'],
+            parameters['results']['output_dataset']['ssd_model']['main_folder'],
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model']['train_folder']
+        )   
+      
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['ssd_model']['bounding_box_folder']
+            )             
             Utils.create_directory(bbox_folder)
 
-        folder = os.path.join(parameter.OUTPUT_MODEL_PATH, parameter.SSD_MODEL_FOLDER, 
-                              str(height) + 'x' + str(width),
-                              parameter.SSD_MODEL_VALID)
-        image_folder = os.path.join(folder, parameter.SSD_MODEL_IMAGES)
-        Utils.remove_directory(image_folder)
-        Utils.create_directory(image_folder)
-        if processing_parameters['bounding_box']['draw_and_save']:
-            bbox_folder = os.path.join(folder, parameter.SSD_MODEL_BBOX)
+        folder = os.path.join(
+            parameters['results']['output_dataset']['output_dataset_folder'],
+            parameters['results']['output_dataset']['ssd_model']['main_folder'],
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model']['valid_folder']
+        )         
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['ssd_model']['bounding_box_folder']
+            )             
             Utils.create_directory(bbox_folder)
 
-        folder = os.path.join(parameter.OUTPUT_MODEL_PATH, parameter.SSD_MODEL_FOLDER, 
-                              str(height) + 'x' + str(width),
-                              parameter.SSD_MODEL_TEST)
-        image_folder = os.path.join(folder, parameter.SSD_MODEL_IMAGES)
-        Utils.remove_directory(image_folder)
-        Utils.create_directory(image_folder)
-        if processing_parameters['bounding_box']['draw_and_save']:
-            bbox_folder = os.path.join(folder, parameter.SSD_MODEL_BBOX)
+        folder = os.path.join(
+            parameters['results']['output_dataset']['output_dataset_folder'],
+            parameters['results']['output_dataset']['ssd_model']['main_folder'],
+            str(height) + 'x' + str(width),
+            parameters['results']['output_dataset']['ssd_model']['test_folder']
+        )         
+        Utils.create_directory(folder)
+        if parameters['input']['draw_and_save_bounding_box']:
+            bbox_folder = os.path.join(
+                folder,
+                parameters['results']['output_dataset']['ssd_model']['bounding_box_folder']
+            )             
             Utils.create_directory(bbox_folder)
             
 # Crop bbox images 
-def crop_bbox_images_from_list(processing_parameters, bbox_list, 
+def crop_bbox_images_from_list(parameters, bbox_list, 
                                crop_height, crop_width, target_folder):
     
+    logging_info(f'crop_bbox_images_from_list ' + 
+                 f'crop_height: {crop_height} ' + 
+                 f'crop_width: {crop_width} ' + 
+                 f'target_folder: {target_folder}')                     
+
     # setting auxiliary variables 
     number_of_sucess = 0
     number_of_errors = 0    
     
     # setting image and annotation folders 
-    image_target_folder = os.path.join(target_folder, parameter.SSD_MODEL_IMAGES)
+    # image_target_folder = os.path.join(target_folder, parameter.SSD_MODEL_IMAGES)
+    image_target_folder = target_folder
     annotation_target_folder = target_folder 
-    bbox_target_folder = os.path.join(target_folder, parameter.SSD_MODEL_BBOX)
+    bbox_target_folder = os.path.join(
+        target_folder, 
+        parameters['results']['output_dataset']['ssd_model']['bounding_box_folder']
+    )
 
     # processing all bounding boxes 
     for bbox_item in bbox_list:
@@ -147,16 +177,19 @@ def crop_bbox_images_from_list(processing_parameters, bbox_list,
             logging_error(f'Img {image_annotation.image_name_with_extension} bbox {bounding_box.id}' + 
                           f' size ({bounding_box.get_height()},{bounding_box.get_width()})' + 
                           f' greater than' + 
-                          f' cropping window size ({crop_height},{crop_width})' +   
-                          f' status error: {eval_bbox_status}')
-            
+                          f' cropping window size ({crop_height},{crop_width})' +
+                          f' class {bounding_box.class_title}' +
+                          f' status error: {eval_bbox_status}' +
+                          f' original image folder: {image_annotation.original_image_folder}')            
             number_of_errors += 1
             continue
 
         # reading the original image 
         image_name = image_annotation.image_name_with_extension
-        pathpath = os.path.join(parameter.OUTPUT_ALL_IMAGES_AND_ANNOTATIONS)
-        image = ImageUtils.read_image(image_annotation.image_name_with_extension, pathpath)
+        input_folder = os.path.join(
+            parameters['results']['all_images']
+        )
+        image = ImageUtils.read_image(image_annotation.image_name_with_extension, input_folder)
 
         # calculating the new coordinates of the new cropped image 
         result, linP1, colP1, linP2, colP2 = \
@@ -207,7 +240,7 @@ def crop_bbox_images_from_list(processing_parameters, bbox_list,
                         crop_height, crop_width)
         
         if result != '':
-            logging_error(f'BBox with inconsistent coordinates: {result}')
+            logging_error(f'Bounding box with inconsistent coordinates: {result}')
             number_of_errors += 1
             continue 
 
@@ -221,7 +254,11 @@ def crop_bbox_images_from_list(processing_parameters, bbox_list,
         ImageUtils.save_image(path_and_filename_cropped_image_SSD, new_image)
         
         # save annoatations file for SSD implementation 
-        path_and_filename_annotation_SSD = os.path.join(annotation_target_folder, parameter.SSD_MODEL_ANNOTATION_FILENAME)
+        # path_and_filename_annotation_SSD = os.path.join(annotation_target_folder, parameter.SSD_MODEL_ANNOTATION_FILENAME)
+        path_and_filename_annotation_SSD = os.path.join(
+            annotation_target_folder,
+            parameters['results']['output_dataset']['ssd_model']['annotation_file']
+        )
         save_annotation_file_SSD(path_and_filename_annotation_SSD, 
                                  filename_cropped_image_SSD,
                                  bounding_box.get_id_class_SSD(),
@@ -235,7 +272,7 @@ def crop_bbox_images_from_list(processing_parameters, bbox_list,
         number_of_sucess += 1
 
         # drawing and saving new images with bounding box
-        if processing_parameters['bounding_box']['draw_and_save']:
+        if parameters['input']['draw_and_save_bounding_box']:
             # setting path and image filename
             new_image_filename_bbox_drawed = \
                 image_annotation.image_name + '-bbox-' + f'{bounding_box.id}' + '-drawn' + '.jpg'

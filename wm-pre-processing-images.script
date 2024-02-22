@@ -1,0 +1,9 @@
+#PBS -N pre_process
+#PBS -q serial
+#PBS -m abe
+#PBS -e pre_process_errors 
+#PBS -o pre_process_output
+
+source ~/research/white-mold-applications/wm-pre-processing-images/venv-wm-pre-processing-images/bin/activate   
+module load cuda/11.5.0-intel-2022.0.1
+python ~/research/white-mold-applications/wm-pre-processing-images/my-python-modules/manage_crop_split_by_image.py

@@ -1,0 +1,106 @@
+{
+    "input": {
+        "main_dataset_folder": "white-mold-dataset",        
+        "input_dataset_folder": "input-original-images",
+
+        "supervisely": {
+            "meta_file": "meta.json",
+            "original_images_folder": "supervisely-format-15ds",
+            "images": "img",
+            "annotations": "ann"
+        },
+        "//comment_about_backgroud": "possible values: 'original' or 'blank'",
+        "background_cropped_images": "original",
+
+        "//comment_about_splitting_criteria": "possible values: 'images' or 'bounding_boxes'",
+        "image_dataset_spliting_criteria": "images",
+
+        "//comment_about_models": "possible values: [ssd, ssd_pascal_voc, faster_rcnn, yolov8] ",
+        "models": ["ssd", "ssd_pascal_voc", "faster_rcnn", "yolov8"],
+
+        "//comment_about_classes": "possible values: [Apothecium, Mature Sclerotium, Imature Sclerotium, White Mold] ",
+        "classes": ["Apothecium", "Mature Sclerotium", "Imature Sclerotium", "White Mold"],
+
+        "//comment_about_dimensions": "possible values for image dimensions used fo cropping: [(height, width), ...]",
+        "dimensions": [
+            {"height": 300, "width": 300}
+        ],
+        
+        "split_dataset": {
+            "train": 70, 
+            "valid": 20, 
+            "test": 10
+        },
+
+        "draw_and_save_bounding_box": true,
+        "create_zipfile": false
+    },
+    "processing": {
+        "research_root_folder": "/home/lovelace/proj/proj939/rubenscp/research",
+        "project_name_folder": "white-mold-applications/wm-pre-processing-images",
+        "running_control_filename": "running_control.json",
+        "running_id": "defined during training/inference"
+    },
+    "results": {
+        "main_folder": "results-pre-processed-images",
+        "running_folder": "defined during training/inference",
+        "log_folder": "log",
+        "log_filename": "wm_pre_processing_images",
+        "processing_parameters_folder": "processing-parameters",
+        "all_images": "all-images-and-annotations",
+        "criteria_splitting": {
+            "images": "splitting_by_images",
+            "bounding_boxes": "splitting_by_bounding_boxes"            
+        },
+        "splitting_dataset": {
+            "splitting_dataset_folder": "defined during training/inference ",
+            "list_folder": "1-lists-to-split-train-valid-test",
+            "all_list_file": "all-bbox-list.txt",
+            "train_list_file": "train-bbox-list.txt",
+            "valid_list_file": "valid-bbox-list.txt",
+            "test_list_file": "test-bbox-list.txt",
+            "violin_plot_file": "bounding-box-plot.png"
+        },
+        "output_dataset": {
+            "output_dataset_folder": "2-output-dataset",
+            "ssd_model": {
+                "main_folder": "ssd",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "bounding_box_folder": "bbox",
+                "images": "images",
+                "annotation_file": "label.csv"               
+            },
+            "ssd_model_with_pascal_voc_format": {
+                "main_folder": "ssd_pascal_voc",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "bounding_box_folder": "bbox"
+            },
+            "faster_rcnn_model": {
+                "main_folder": "faster_rcnn",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "bounding_box_folder": "bbox"
+            },
+             "yolov8_model": {
+                "main_folder": "yolov8",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "images_folder": "images",
+                "labels_folder": "labels",
+                "bounding_box_folder": "bbox"
+            },
+            "zip": {
+                "main_folder": "3-zipped-dataset",
+                "filename": "white_mold_image_dataset",
+                "filename_split_by_images": "_splitting_by_images",
+                "filename_split_by_bbox": "_splitting_by_bounding_boxes"
+            }
+        }       
+    }
+}
