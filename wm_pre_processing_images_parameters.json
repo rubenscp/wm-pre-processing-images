@@ -5,7 +5,7 @@
 
         "supervisely": {
             "meta_file": "meta.json",
-            "original_images_folder": "supervisely-format-15ds",
+            "original_images_folder": "supervisely-format-01ds",
             "images": "img",
             "annotations": "ann"
         },

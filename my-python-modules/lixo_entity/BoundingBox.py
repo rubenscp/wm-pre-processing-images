@@ -19,8 +19,8 @@ class BoundingBox:
         self.confidence = confidence
         self.annotation_filename = annotation_filename
 
-    def to_string(self):
-        text = 'Class: ' + self.class_title + ' P1: (' + str(self.lin_point1) + ',' + str(
+    def toString(self):
+        text = 'Class: ' + self.class_name + ' P1: (' + str(self.lin_point1) + ',' + str(
             self.col_point1) + ')  P2: (' + str(self.lin_point2) + ',' + str(
             self.col_point2) + ')' + '  confidence: ' + str(self.confidence)
         return text

@@ -63,7 +63,7 @@ class Tasks:
         for task in self.tasks:
             count += 1
             text += f'{count:02}. ' + \
-                    task['task_name'].ljust(60) + \
+                    task['task_name'].ljust(70) + \
                     task['task_start'].strftime("%H:%M:%S") + ' > ' + \
                     task['task_finish'].strftime("%H:%M:%S") + ' = ' + \
                     str(task['task_duration']) + \
@@ -71,7 +71,7 @@ class Tasks:
                     # task['task_duration'].total_seconds() + \
 
         text += LINE_FEED + \
-                'Processing total time'.ljust(64) + \
+                'Processing total time'.ljust(74) + \
                 self.processing_start_time.strftime("%H:%M:%S") + ' > ' + \
                 self.processing_finish_time.strftime("%H:%M:%S") + ' = ' + \
                 str(self.processiing_duration) + \
