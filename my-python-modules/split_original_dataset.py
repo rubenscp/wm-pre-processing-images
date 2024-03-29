@@ -19,13 +19,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Importing python modules
-from manage_log import *
-from utils import Utils
+from common.manage_log import *
+from common.utils import Utils
+from common.entity.ImageAnnotation import ImageAnnotation
 from random import randrange
-# import parameter as parameter 
-
-# Importing entity classes
-from entity.ImageAnnotation import ImageAnnotation
 
 # ###########################################
 # Constants
@@ -198,10 +195,12 @@ def create_lists_image_original_dataset(parameters, processing_statistics):
 
             # copying image and annotation files
             Utils.copy_file(image_filename_with_extension,
-                            input_supervisely_image_path, 
+                            input_supervisely_image_path,
+                            image_filename_with_extension,
                             parameters['results']['all_images'])            
             Utils.copy_file(supervisely_annotation_file,
-                            input_supervisely_annotation_path, 
+                            input_supervisely_annotation_path,
+                            supervisely_annotation_file,
                             parameters['results']['all_images'])            
 
             # updating numbe of images at same size (height and width)

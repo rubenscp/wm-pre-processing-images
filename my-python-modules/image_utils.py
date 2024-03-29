@@ -14,10 +14,10 @@ Version: 1.0
 import cv2
 
 # Importing python modules
-from manage_log import *
+from common.manage_log import *
 
 # Importing entity classes
-from entity.ImageAnnotation import ImageAnnotation
+from common.entity.ImageAnnotation import ImageAnnotation
 
 class ImageUtils:
 

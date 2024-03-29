@@ -5,7 +5,7 @@
 
         "supervisely": {
             "meta_file": "meta.json",
-            "original_images_folder": "supervisely-format-01ds",
+            "original_images_folder": "supervisely-format-03ds",
             "images": "img",
             "annotations": "ann"
         },
@@ -32,14 +32,52 @@
             "test": 10
         },
 
+        "//comment_about_balanced_dataset": "if active, create new dataset with the same number of images by classes",
+        "balance_of_images_per_class": {
+            "active": true,
+            "Apothecium" : {
+                "number_for_train": 20, 
+                "number_for_valid": 20, 
+                "number_for_test": 20
+            },
+            "Mature Sclerotium": {
+                "number_for_train": 20, 
+                "number_for_valid": 20, 
+                "number_for_test": 20
+            },
+            "Imature Sclerotium": {
+                "number_for_train": 20, 
+                "number_for_valid": 20, 
+                "number_for_test": 20
+            },
+            "White Mold": {
+                "number_for_train": 20, 
+                "number_for_valid": 20, 
+                "number_for_test": 20
+            }
+        },
         "draw_and_save_bounding_box": true,
         "create_zipfile": false
+    },
+    "neural_network_model": {
+        "classes": [
+            "__background__",
+            "Apothecium",
+            "Imature Sclerotium",
+            "Mature Sclerotium",
+            "White Mold"
+        ]
     },
     "processing": {
         "research_root_folder": "/home/lovelace/proj/proj939/rubenscp/research",
         "project_name_folder": "white-mold-applications/wm-pre-processing-images",
         "running_control_filename": "running_control.json",
-        "running_id": "defined during training/inference"
+        "running_id": "defined during training/inference",
+        "balance_of_images_per_class": {
+            "number_of_images_for_train": 553,
+            "number_of_images_for_valid": 186,
+            "number_of_images_for_test": 120
+        }
     },
     "results": {
         "main_folder": "results-pre-processed-images",
@@ -101,6 +139,41 @@
                 "filename_split_by_images": "_splitting_by_images",
                 "filename_split_by_bbox": "_splitting_by_bounding_boxes"
             }
-        }       
+        },
+        "balanced_output_dataset": {
+            "balanced_output_dataset_folder": "4-balanced-output-dataset",
+            "ssd_model": {
+                "main_folder": "ssd",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "bounding_box_folder": "bbox",
+                "images": "images",
+                "annotation_file": "label.csv"               
+            },
+            "ssd_model_with_pascal_voc_format": {
+                "main_folder": "ssd_pascal_voc",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "bounding_box_folder": "bbox"
+            },
+            "faster_rcnn_model": {
+                "main_folder": "faster_rcnn",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "bounding_box_folder": "bbox"
+            },
+             "yolov8_model": {
+                "main_folder": "yolov8",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "images_folder": "images",
+                "labels_folder": "labels",
+                "bounding_box_folder": "bbox"
+            }
+        }
     }
 }

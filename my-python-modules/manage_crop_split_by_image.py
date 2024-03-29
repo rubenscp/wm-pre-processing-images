@@ -17,20 +17,19 @@ import os
 from pathlib import Path
 
 # Importing python modules
-from manage_log import *
-from utils import Utils
+from common.manage_log import *
+from common.utils import Utils
+from common.entity.ImageAnnotation import ImageAnnotation
+from common.tasks import Tasks
+
 from random import randrange
 from split_original_dataset import * 
 from crop_bbox_ssd_model import * 
 from crop_bbox_ssd_model_pascal_voc_format import * 
 from crop_bbox_faster_rcnn_model import * 
-from crop_bbox_yolo_v8_model import * 
+from crop_bbox_yolo_v8_model import *
+from balance_original_dataset import * 
 
-# Importing entity classes
-from entity.ImageAnnotation import ImageAnnotation
-
-# Import python code from White Mold Project 
-from tasks import Tasks
 
 # ###########################################
 # Constants
@@ -121,12 +120,12 @@ def main():
 
     # getting the list of images for training, validaton and testing selected randomly
     # to use in all tasks of image cropping for all dimensions
-    processing_tasks.start_task('Creating list of bounding boxes from original annotated images')
+    processing_tasks.start_task('Creating list of bboxes from original annotated images')
     logging_info('Creating list of bounding boxes from original annotated images' + LINE_FEED)
     train_bbox_list, valid_bbox_list, test_bbox_list, \
     train_bbox_df, valid_bbox_df, test_bbox_df = \
         create_bbox_list_from_original_dataset(parameters, processing_statistics)
-    processing_tasks.finish_task('Creating list of bounding boxes from original annotated images')
+    processing_tasks.finish_task('Creating list of bboxes from original annotated images')
 
     # evalute models for processing 
     for model in parameters['input']['models']:
@@ -143,7 +142,7 @@ def main():
             processing_tasks.finish_task('Cropping bounding box image for SSD model')
         
         if model == 'ssd_pascal_voc':
-            processing_tasks.start_task('Cropping bounding box image for SSD model with Pascal VOC format')
+            processing_tasks.start_task('Cropping bounding box image for SSD model with Pascal VOC')
             logging_info('')
             logging_info('4.2) Cropping bounding box image for SDD model with Pascal VOC format' + LINE_FEED)
             crop_bbox_list_for_ssd_pascal_voc_model(parameters,
@@ -151,7 +150,7 @@ def main():
                                                     valid_bbox_list, 
                                                     test_bbox_list,
                                                     processing_statistics)
-            processing_tasks.finish_task('Cropping bounding box image for SSD model with Pascal VOC format')
+            processing_tasks.finish_task('Cropping bounding box image for SSD model with Pascal VOC')
                                             
         if model == 'faster_rcnn':
             processing_tasks.start_task('Cropping bounding box image for Faster R-CNN model')
@@ -189,9 +188,20 @@ def main():
     log_processing_statistics(parameters,
                               processing_statistics)
 
+    # create new image dataset with balanced number of images
+    processing_tasks.start_task('Creating balanced image dataset')
+    create_dataset_with_balanced_number_of_images(parameters)
+    processing_tasks.finish_task('Creating balanced image dataset')
+
+    # # getting statistics of input dataset
+    # processing_tasks.start_task('Getting statistics of input dataset')
+    # annotation_statistics = get_input_dataset_statistics(parameters)
+    # show_input_dataset_statistics(parameters, annotation_statistics)
+    # processing_tasks.finish_task('Getting statistics of input dataset')
+
     # end of processing   
     logging_info('')
-    logging_info('Finished the cropping bouding boxes by images' + LINE_FEED)
+    logging_info('Finished the cropping bounding boxes by images' + LINE_FEED)
 
     # printing tasks summary 
     processing_tasks.finish_processing()
@@ -216,7 +226,6 @@ def get_running_id(parameters):
     '''
     Get last running id to calculate the current id
     '''    
-
     # setting control filename 
     running_control_filename = os.path.join(
         parameters['processing']['research_root_folder'],
@@ -248,7 +257,6 @@ def set_results_folder(parameters):
     '''
     Set folder name of output results
     '''
-    
     # setting runnig id text 
     running_id = parameters['processing']['running_id']
     running_id_text = 'running-' + f'{running_id:04}'
@@ -314,19 +322,43 @@ def set_results_folder(parameters):
     parameters['results']['output_dataset']['output_dataset_folder'] = output_dataset_folder
     Utils.create_directory(output_dataset_folder)
 
+    balanced_output_dataset_folder = os.path.join(
+        splitting_dataset_folder,
+        parameters['results']['balanced_output_dataset']['balanced_output_dataset_folder'],
+    )
+    parameters['results']['balanced_output_dataset']['balanced_output_dataset_folder'] = balanced_output_dataset_folder
+    Utils.create_directory(balanced_output_dataset_folder)
+
     # setting and creating models and image size folder folder
     for model in parameters['input']['models']:
         if model == 'ssd':
-            set_ssd_model_folders(parameters)
+            output_balanced_dataset = 'output_dataset'
+            output_balanced_folder = 'output_dataset_folder'
+            set_ssd_model_folders(parameters, output_balanced_dataset, output_balanced_folder)
 
         if model == 'ssd_pascal_voc':
-            set_ssd_model_with_pascal_voc_format_folders(parameters)
+            output_balanced_dataset = 'output_dataset'
+            output_balanced_folder = 'output_dataset_folder'
+            set_ssd_model_with_pascal_voc_format_folders(parameters, output_balanced_dataset, output_balanced_folder)
+            output_balanced_dataset = 'balanced_output_dataset'
+            output_balanced_folder = 'balanced_output_dataset_folder'
+            set_ssd_model_with_pascal_voc_format_folders(parameters, output_balanced_dataset, output_balanced_folder)
 
         if model == 'faster_rcnn':
-            set_faster_rcnn_model_folders(parameters)            
+            output_balanced_dataset = 'output_dataset'
+            output_balanced_folder = 'output_dataset_folder'
+            set_faster_rcnn_model_folders(parameters, output_balanced_dataset, output_balanced_folder)
+            output_balanced_dataset = 'balanced_output_dataset'
+            output_balanced_folder = 'balanced_output_dataset_folder'
+            set_faster_rcnn_model_folders(parameters, output_balanced_dataset, output_balanced_folder)
 
         if model == 'yolov8':
-            set_yolov8_model_folders(parameters)            
+            output_balanced_dataset = 'output_dataset'
+            output_balanced_folder = 'output_dataset_folder'
+            set_yolov8_model_folders(parameters, output_balanced_dataset, output_balanced_folder)
+            output_balanced_dataset = 'balanced_output_dataset'
+            output_balanced_folder = 'balanced_output_dataset_folder'
+            set_yolov8_model_folders(parameters, output_balanced_dataset, output_balanced_folder)
 
     # setting and creating folder of zipped files
     if parameters['input']['create_zipfile']:    
@@ -483,6 +515,17 @@ def zip_output_folders(parameters):
             else:
                 logging_error(f'Error in creating of the zipfile of image dataset!')
 
+def create_dataset_with_balanced_number_of_images(parameters):
+
+    # checking creating balanced dataset activated
+    if not parameters['input']['balance_of_images_per_class']['active']:
+        logging_info(f'Creation of dataset with balanced number of images is INACTIVE')
+        return 
+
+    # create balanced image dataset according by parameters 
+    create_balanced_image_dataset(parameters)
+   
+
 def log_processing_statistics(parameters, 
                               processing_statistics):
 
@@ -536,24 +579,49 @@ def log_processing_statistics(parameters,
         logging_info(f"{key}: {str(processing_statistics['original_image_size'].get(key))}")
         total_of_original_images += processing_statistics['original_image_size'].get(key)
 
-    logging_info(f'Total of original images: {total_of_original_images}')
+    # logging_info(f'Total of original images: {total_of_original_images}')
 
 
+# # getting statistics of input dataset 
+# def get_input_dataset_statistics(parameters):
+    
+#     annotation_statistics = AnnotationsStatistic()
+#     steps = ['train', 'valid', 'test'] 
+#     annotation_statistics.processing_statistics(parameters, steps)
+#     return annotation_statistics
+
+# def show_input_dataset_statistics(parameters, annotation_statistics):
+
+#     logging_info(f'Input dataset statistic')
+#     logging_info(annotation_statistics.to_string())
+#     path_and_filename = os.path.join(
+#         parameters['training_results']['metrics_folder'],
+#         parameters['neural_network_model']['model_name'] + '_annotations_statistics.xlsx',
+#     )
+#     annotation_format = parameters['input']['input_dataset']['annotation_format']
+#     input_image_size = parameters['input']['input_dataset']['input_image_size']
+#     classes = (parameters['neural_network_model']['classes'])[1:5]
+#     annotation_statistics.save_annotations_statistics(
+#         path_and_filename,
+#         annotation_format,
+#         input_image_size,
+#         classes
+#     )
 
 # ###########################################
 # Methods of Level 3
 # ###########################################
 
-def set_ssd_model_folders(parameters):
+def set_ssd_model_folders(parameters, output_balanced_dataset, output_balanced_folder):
     '''
     Create folder for results of SSD model 
     '''    
 
     model_folder = os.path.join(
-        parameters['results']['output_dataset']['output_dataset_folder'],
-        parameters['results']['output_dataset']['ssd_model']['main_folder'],
+        parameters['results'][output_balanced_dataset][output_balanced_folder],
+        parameters['results'][output_balanced_dataset]['ssd_model']['main_folder'],
     )
-    parameters['results']['output_dataset']['ssd_model']['main_folder'] = model_folder
+    parameters['results'][output_balanced_dataset]['ssd_model']['main_folder'] = model_folder
     Utils.create_directory(model_folder)
 
     for item in parameters['input']['dimensions']:            
@@ -564,53 +632,53 @@ def set_ssd_model_folders(parameters):
         folder = os.path.join(
             model_folder,
             str(height) + 'x' + str(width),
-            parameters['results']['output_dataset']['ssd_model']['train_folder']
+            parameters['results'][output_balanced_dataset]['ssd_model']['train_folder']
         )
         Utils.create_directory(folder)
         if parameters['input']['draw_and_save_bounding_box']:
             bbox_folder = os.path.join(
                 folder,
-                parameters['results']['output_dataset']['ssd_model']['bounding_box_folder']
+                parameters['results'][output_balanced_dataset]['ssd_model']['bounding_box_folder']
             )             
             Utils.create_directory(bbox_folder)
 
         folder = os.path.join(
             model_folder,
             str(height) + 'x' + str(width),
-            parameters['results']['output_dataset']['ssd_model']['valid_folder']
+            parameters['results'][output_balanced_dataset]['ssd_model']['valid_folder']
         )   
         Utils.create_directory(folder)
         if parameters['input']['draw_and_save_bounding_box']:
             bbox_folder = os.path.join(
                 folder,
-                parameters['results']['output_dataset']['ssd_model']['bounding_box_folder']
+                parameters['results'][output_balanced_dataset]['ssd_model']['bounding_box_folder']
             ) 
             Utils.create_directory(bbox_folder)
 
         folder = os.path.join(
             model_folder,
             str(height) + 'x' + str(width),
-            parameters['results']['output_dataset']['ssd_model']['test_folder']
+            parameters['results'][output_balanced_dataset]['ssd_model']['test_folder']
         )   
         Utils.create_directory(folder)
         if parameters['input']['draw_and_save_bounding_box']:
             bbox_folder = os.path.join(
                 folder,
-                parameters['results']['output_dataset']['ssd_model']['bounding_box_folder']
+                parameters['results'][output_balanced_dataset]['ssd_model']['bounding_box_folder']
             )
             Utils.create_directory(bbox_folder)
 
 
-def set_ssd_model_with_pascal_voc_format_folders(parameters):
+def set_ssd_model_with_pascal_voc_format_folders(parameters, output_balanced_dataset, output_balanced_folder):
     '''
     Create folder for results of SSD model 
     '''    
 
     model_folder = os.path.join(
-        parameters['results']['output_dataset']['output_dataset_folder'],
-        parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['main_folder'],
+        parameters['results'][output_balanced_dataset][output_balanced_folder],
+        parameters['results'][output_balanced_dataset]['ssd_model_with_pascal_voc_format']['main_folder'],
     )
-    parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['main_folder'] = model_folder
+    parameters['results'][output_balanced_dataset]['ssd_model_with_pascal_voc_format']['main_folder'] = model_folder
     Utils.create_directory(model_folder)
 
     for item in parameters['input']['dimensions']:            
@@ -621,52 +689,53 @@ def set_ssd_model_with_pascal_voc_format_folders(parameters):
         folder = os.path.join(
             model_folder,
             str(height) + 'x' + str(width),
-            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['train_folder']
+            parameters['results'][output_balanced_dataset]['ssd_model_with_pascal_voc_format']['train_folder']
         )
+    
         Utils.create_directory(folder)
         if parameters['input']['draw_and_save_bounding_box']:
             bbox_folder = os.path.join(
                 folder,
-                parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['bounding_box_folder']
+                parameters['results'][output_balanced_dataset]['ssd_model_with_pascal_voc_format']['bounding_box_folder']
             )             
             Utils.create_directory(bbox_folder)
 
         folder = os.path.join(
             model_folder,
             str(height) + 'x' + str(width),
-            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['valid_folder']
+            parameters['results'][output_balanced_dataset]['ssd_model_with_pascal_voc_format']['valid_folder']
         )   
         Utils.create_directory(folder)
         if parameters['input']['draw_and_save_bounding_box']:
             bbox_folder = os.path.join(
                 folder,
-                parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['bounding_box_folder']
+                parameters['results'][output_balanced_dataset]['ssd_model_with_pascal_voc_format']['bounding_box_folder']
             )             
             Utils.create_directory(bbox_folder)
 
         folder = os.path.join(
             model_folder,
             str(height) + 'x' + str(width),
-            parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['test_folder']
+            parameters['results'][output_balanced_dataset]['ssd_model_with_pascal_voc_format']['test_folder']
         )   
         Utils.create_directory(folder)
         if parameters['input']['draw_and_save_bounding_box']:
             bbox_folder = os.path.join(
                 folder,
-                parameters['results']['output_dataset']['ssd_model_with_pascal_voc_format']['bounding_box_folder']
+                parameters['results'][output_balanced_dataset]['ssd_model_with_pascal_voc_format']['bounding_box_folder']
             )             
             Utils.create_directory(bbox_folder)
 
-def set_faster_rcnn_model_folders(parameters):
+def set_faster_rcnn_model_folders(parameters, output_balanced_dataset, output_balanced_folder):
     '''
     Create folder for results of Faster RCNN model 
     '''    
 
     model_folder = os.path.join(
-        parameters['results']['output_dataset']['output_dataset_folder'],
-        parameters['results']['output_dataset']['faster_rcnn_model']['main_folder'],
+        parameters['results'][output_balanced_dataset][output_balanced_folder],
+        parameters['results'][output_balanced_dataset]['faster_rcnn_model']['main_folder'],
     )
-    parameters['results']['output_dataset']['faster_rcnn_model']['main_folder'] = model_folder
+    parameters['results'][output_balanced_dataset]['faster_rcnn_model']['main_folder'] = model_folder
     Utils.create_directory(model_folder)
 
     for item in parameters['input']['dimensions']:            
@@ -677,53 +746,53 @@ def set_faster_rcnn_model_folders(parameters):
         folder = os.path.join(
             model_folder,
             str(height) + 'x' + str(width),
-            parameters['results']['output_dataset']['faster_rcnn_model']['train_folder']
+            parameters['results'][output_balanced_dataset]['faster_rcnn_model']['train_folder']
         )
         Utils.create_directory(folder)
         if parameters['input']['draw_and_save_bounding_box']:
             bbox_folder = os.path.join(
                 folder,
-                parameters['results']['output_dataset']['faster_rcnn_model']['bounding_box_folder']
+                parameters['results'][output_balanced_dataset]['faster_rcnn_model']['bounding_box_folder']
             )             
             Utils.create_directory(bbox_folder)
 
         folder = os.path.join(
             model_folder,
             str(height) + 'x' + str(width),
-            parameters['results']['output_dataset']['faster_rcnn_model']['valid_folder']
+            parameters['results'][output_balanced_dataset]['faster_rcnn_model']['valid_folder']
         )   
         Utils.create_directory(folder)
         if parameters['input']['draw_and_save_bounding_box']:
             bbox_folder = os.path.join(
                 folder,
-                parameters['results']['output_dataset']['faster_rcnn_model']['bounding_box_folder']
+                parameters['results'][output_balanced_dataset]['faster_rcnn_model']['bounding_box_folder']
             )             
             Utils.create_directory(bbox_folder)
 
         folder = os.path.join(
             model_folder,
             str(height) + 'x' + str(width),
-            parameters['results']['output_dataset']['faster_rcnn_model']['test_folder']
+            parameters['results'][output_balanced_dataset]['faster_rcnn_model']['test_folder']
         )   
         Utils.create_directory(folder)
         if parameters['input']['draw_and_save_bounding_box']:
             bbox_folder = os.path.join(
                 folder,
-                parameters['results']['output_dataset']['faster_rcnn_model']['bounding_box_folder']
+                parameters['results'][output_balanced_dataset]['faster_rcnn_model']['bounding_box_folder']
             )             
             Utils.create_directory(bbox_folder)
 
 
-def set_yolov8_model_folders(parameters):
+def set_yolov8_model_folders(parameters, output_balanced_dataset, output_balanced_folder):
     '''
     Create folder for results of Faster RCNN model 
     '''    
 
     model_folder = os.path.join(
-        parameters['results']['output_dataset']['output_dataset_folder'],
-        parameters['results']['output_dataset']['yolov8_model']['main_folder'],
+        parameters['results'][output_balanced_dataset][output_balanced_folder],
+        parameters['results'][output_balanced_dataset]['yolov8_model']['main_folder'],
     )
-    parameters['results']['output_dataset']['yolov8_model']['main_folder'] = model_folder
+    parameters['results'][output_balanced_dataset]['yolov8_model']['main_folder'] = model_folder
     Utils.create_directory(model_folder)
 
     for item in parameters['input']['dimensions']:            
@@ -734,41 +803,72 @@ def set_yolov8_model_folders(parameters):
         folder = os.path.join(
             model_folder,
             str(height) + 'x' + str(width),
-            parameters['results']['output_dataset']['yolov8_model']['train_folder']
+            parameters['results'][output_balanced_dataset]['yolov8_model']['train_folder']
         )
         Utils.create_directory(folder)
+        images_folder = os.path.join(
+            folder, 
+            parameters['results'][output_balanced_dataset]['yolov8_model']['images_folder'],
+        )
+        Utils.create_directory(images_folder)
+        labels_folder = os.path.join(
+            folder, 
+            parameters['results'][output_balanced_dataset]['yolov8_model']['labels_folder'],
+        )
+        Utils.create_directory(labels_folder)
         if parameters['input']['draw_and_save_bounding_box']:
             bbox_folder = os.path.join(
                 folder,
-                parameters['results']['output_dataset']['yolov8_model']['bounding_box_folder']
+                parameters['results'][output_balanced_dataset]['yolov8_model']['bounding_box_folder']
             )             
             Utils.create_directory(bbox_folder)
 
         folder = os.path.join(
             model_folder,
             str(height) + 'x' + str(width),
-            parameters['results']['output_dataset']['yolov8_model']['valid_folder']
+            parameters['results'][output_balanced_dataset]['yolov8_model']['valid_folder']
         )   
         Utils.create_directory(folder)
+        images_folder = os.path.join(
+            folder, 
+            parameters['results'][output_balanced_dataset]['yolov8_model']['images_folder'],
+        )
+        Utils.create_directory(images_folder)
+        labels_folder = os.path.join(
+            folder, 
+            parameters['results'][output_balanced_dataset]['yolov8_model']['labels_folder'],
+        )
+        Utils.create_directory(labels_folder)
         if parameters['input']['draw_and_save_bounding_box']:
             bbox_folder = os.path.join(
                 folder,
-                parameters['results']['output_dataset']['yolov8_model']['bounding_box_folder']
+                parameters['results'][output_balanced_dataset]['yolov8_model']['bounding_box_folder']
             )             
             Utils.create_directory(bbox_folder)
 
         folder = os.path.join(
             model_folder,
             str(height) + 'x' + str(width),
-            parameters['results']['output_dataset']['yolov8_model']['test_folder']
+            parameters['results'][output_balanced_dataset]['yolov8_model']['test_folder']
         )   
         Utils.create_directory(folder)
+        images_folder = os.path.join(
+            folder, 
+            parameters['results'][output_balanced_dataset]['yolov8_model']['images_folder'],
+        )
+        Utils.create_directory(images_folder)
+        labels_folder = os.path.join(
+            folder, 
+            parameters['results'][output_balanced_dataset]['yolov8_model']['labels_folder'],
+        )
+        Utils.create_directory(labels_folder)   
         if parameters['input']['draw_and_save_bounding_box']:
             bbox_folder = os.path.join(
                 folder,
-                parameters['results']['output_dataset']['yolov8_model']['bounding_box_folder']
+                parameters['results'][output_balanced_dataset]['yolov8_model']['bounding_box_folder']
             )             
             Utils.create_directory(bbox_folder)
+
 
 # ###########################################
 # Main method

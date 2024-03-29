@@ -15,13 +15,12 @@ Version: 1.0
 import os
 
 # Importing python modules
-from manage_log import *
-from utils import Utils
+from common.manage_log import *
+from common.utils import Utils
+from common.entity.ImageAnnotation import ImageAnnotation
+
 from image_utils import ImageUtils
 from random import randrange
-
-# Importing entity classes
-from entity.ImageAnnotation import ImageAnnotation
 
 # ###########################################
 # Constants

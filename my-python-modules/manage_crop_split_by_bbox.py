@@ -20,8 +20,8 @@ from pathlib import Path
 # import torch
 
 # Importing python modules
-from manage_log import *
-from utils import Utils
+from common.manage_log import *
+from common.utils import Utils
 from random import randrange
 import parameter as parameter 
 from split_original_dataset import * 
