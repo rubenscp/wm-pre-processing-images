@@ -96,17 +96,17 @@ def create_balanced_image_dataset(parameters):
         save_sheet_balanced_image_dataset(path_and_filename, balanced_image_dataset, dimension)
 
         # copying files according by balanced image list 
-        build_balanced_image_dataset_ssd_pascal_voc(parameters, dimension, balanced_image_dataset, 'train')
-        build_balanced_image_dataset_ssd_pascal_voc(parameters, dimension, balanced_image_dataset, 'valid')
         build_balanced_image_dataset_ssd_pascal_voc(parameters, dimension, balanced_image_dataset, 'test')
+        build_balanced_image_dataset_ssd_pascal_voc(parameters, dimension, balanced_image_dataset, 'valid')
+        build_balanced_image_dataset_ssd_pascal_voc(parameters, dimension, balanced_image_dataset, 'train')
                 
-        build_balanced_image_dataset_faster_rcnn(parameters, dimension, balanced_image_dataset, 'train')
-        build_balanced_image_dataset_faster_rcnn(parameters, dimension, balanced_image_dataset, 'valid')
         build_balanced_image_dataset_faster_rcnn(parameters, dimension, balanced_image_dataset, 'test')
+        build_balanced_image_dataset_faster_rcnn(parameters, dimension, balanced_image_dataset, 'valid')
+        build_balanced_image_dataset_faster_rcnn(parameters, dimension, balanced_image_dataset, 'train')
                 
-        build_balanced_image_dataset_yolo(parameters, dimension, balanced_image_dataset, 'train')
-        build_balanced_image_dataset_yolo(parameters, dimension, balanced_image_dataset, 'valid')
         build_balanced_image_dataset_yolo(parameters, dimension, balanced_image_dataset, 'test')
+        build_balanced_image_dataset_yolo(parameters, dimension, balanced_image_dataset, 'valid')
+        build_balanced_image_dataset_yolo(parameters, dimension, balanced_image_dataset, 'train')
                 
 
 # ###########################################
@@ -272,6 +272,7 @@ def build_balanced_image_dataset_ssd_pascal_voc(
         output_dataset_type_folder,
         parameters['results']['balanced_output_dataset']['ssd_model_with_pascal_voc_format']['bounding_box_folder']
     )
+
 
     # copying images, annotations and bbox images 
     images_names_list = balanced_image_dataset[dimension][input_dataset_type + '_images']

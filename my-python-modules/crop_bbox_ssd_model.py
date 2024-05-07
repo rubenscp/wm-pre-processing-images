@@ -144,10 +144,10 @@ def create_working_folders(parameters):
 def crop_bbox_images_from_list(parameters, bbox_list, 
                                crop_height, crop_width, target_folder):
     
-    logging_info(f'crop_bbox_images_from_list ' + 
-                 f'crop_height: {crop_height} ' + 
-                 f'crop_width: {crop_width} ' + 
-                 f'target_folder: {target_folder}')                     
+    # logging_info(f'crop_bbox_images_from_list ' + 
+    #              f'crop_height: {crop_height} ' + 
+    #              f'crop_width: {crop_width} ' + 
+    #              f'target_folder: {target_folder}')                     
 
     # setting auxiliary variables 
     number_of_sucess = 0

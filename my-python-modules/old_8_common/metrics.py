@@ -169,7 +169,7 @@ class Metrics:
 
 
     def compute_confusion_matrix(self, model_name, num_classes, threshold, iou_threshold, 
-                                 metrics_folder, running_id_text, tested_folder):
+                                 metrics_folder, running_id_text):
 
         # Inspired from:
         # https://medium.com/@tenyks_blogger/multiclass-confusion-matrix-for-object-detection-6fc4b0135de6
@@ -222,7 +222,7 @@ class Metrics:
                             threshold=threshold, 
                             iou_threshold=iou_threshold, 
                             iou=0,
-                            status='undetected-fn'
+                            status='Undetected object'
                         )
             else:
                 for pred in preds:
@@ -237,20 +237,19 @@ class Metrics:
 
                                 # evaluate IoU threshold and labels
                                 if iou >= iou_threshold:
+                                    status = 'Target detected'
                                     number_of_bounding_boxes_predicted_with_target += 1                           
                                     if p_label == t_label:
                                         # True Positive 
                                         self.full_confusion_matrix[t_label, p_label] += 1
-                                        status = 'target-tp'
                                     else:                        
                                         # False Positive 
                                         self.full_confusion_matrix[t_label, p_label] += 1
-                                        status = 'target-fp'
                                 else:
                                     # Counting ghost predictions   
                                     number_of_ghost_predictions += 1                         
                                     self.full_confusion_matrix[t_label, ghost_predictions_index] += 1
-                                    status = 'err-pred-fp'
+                                    status = 'Ghost prediction'
 
                                 # adding bounding box to list of statistics
                                 self.add_image_bounding_box(
@@ -273,9 +272,6 @@ class Metrics:
             model_name + '_' + running_id_text + '_images_bounding_boxes.xlsx'
         )
         self.save_inferenced_images(path_and_filename)
-
-        # split tested images according status of confusion matrix 
-        self.split_tested_images(tested_folder)
 
         # getting just confusion matrix whithout the background, ghost predictions and undetected objects
         self.confusion_matrix = np.copy(self.full_confusion_matrix[1:-1,1:-1])
@@ -606,28 +602,6 @@ class Metrics:
         df.to_excel(path_and_filename, sheet_name='bounding_boxes', index=False)
 
 
-    def split_tested_images(self, tested_folder):
-
-        # creating specific folders 
-        target_tp = os.path.join(tested_folder, 'target-tp')
-        Utils.create_directory(target_tp)
-
-        target_fp = os.path.join(tested_folder, 'target-fp')
-        Utils.create_directory(target_fp)
-
-        err_pred_fp = os.path.join(tested_folder, 'err-pred-fp')
-        Utils.create_directory(err_pred_fp)
-
-        undetected_fn = os.path.join(tested_folder, 'undetected-fn')
-        Utils.create_directory(undetected_fn)
-
-        for image_bounding_box in self.images_bounding_boxes:
-            filename, extension = Utils.get_filename_and_extension(image_bounding_box[0])
-            filename = filename + '_predicted.' + extension
-            input_path = tested_folder
-            output_path = os.path.join(tested_folder, image_bounding_box[9])
-            Utils.copy_file_same_name(filename, input_path, output_path)
-        
     def compute_metrics_sklearn(self):
         logging_info(f'Computing metrics using Sklearn')
 

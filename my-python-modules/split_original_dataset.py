@@ -121,6 +121,8 @@ def create_lists_image_original_dataset(parameters, processing_statistics):
 
     # creating working lists
     images_with_annotations = []
+    number_of_images_with_no_annotations = 0
+    total_number_of_images_from_datasets = 0
 
     # reading the original images in all datasets from Supervisely platform
 
@@ -156,7 +158,9 @@ def create_lists_image_original_dataset(parameters, processing_statistics):
             input_supervisely_annotation_path, '.json')
 
         count += 1
+        logging_info(f'')
         logging_info(f'Processing dataset folder #{count}: {dataset_folder} - {len(supervisely_annotation_files)} images')
+        total_number_of_images_from_datasets += len(supervisely_annotation_files)
 
         # processing one annotation file
         for supervisely_annotation_file in supervisely_annotation_files:
@@ -174,38 +178,83 @@ def create_lists_image_original_dataset(parameters, processing_statistics):
                 # creating image annotation object 
                 image_annotation = ImageAnnotation()
 
+                # setting image name used just to copy to "all annotations folder"
+                image_filename_to_copy = supervisely_annotation_file.replace('.json', '')
+                supervisely_annotation_filename_to_copy = supervisely_annotation_file
+
                 # setting annotation fields
-                image_filename = supervisely_annotation_file.replace('.json', '').replace('.jpg', '').replace('.jpeg', '')
-                image_filename_with_extension = supervisely_annotation_file.replace('.json', '')
+                image_filename = dataset_folder + '-' + supervisely_annotation_file.replace('.json', '').replace('.jpg', '').replace('.jpeg', '')
+                image_filename_with_extension = dataset_folder + '-' + supervisely_annotation_file.replace('.json', '')
+                supervisely_annotation_file_with_dataset_folder = dataset_folder + '-' + supervisely_annotation_file
+
+                # setting the new name of image and annotation files to avoid duplicated name files
+                # image_filename_selected_to_crop = dataset_folder + '-' + image_filename_with_extension
+                # annotation_filename_selected_to_crop = dataset_folder + '-' + supervisely_annotation_file
+
                 image_annotation.set_annotation_fields_in_supervisely_format(
                     image_filename,
                     image_filename_with_extension,
-                    supervisely_annotation_file,                   
+                    supervisely_annotation_file_with_dataset_folder,                   
                     annotation_json,
                     parameters['input']['classes'], 
-                    dataset_folder)
+                    dataset_folder
+                )
+    
+                # merging class labels into one class label 
+                if parameters['input']['merging_classes']['active']:
+                    image_annotation.merge_classes_in_bounding_boxes(
+                        parameters['input']['merging_classes']['origin_classes'],
+                        parameters['input']['merging_classes']['target_class'],
+                        parameters['input']['merging_classes']['target_class_id'],
+                    )                  
+
+                # image_annotation.set_annotation_fields_in_supervisely_format(
+                #     image_filename,
+                #     image_filename_with_extension,
+                #     supervisely_annotation_file,                   
+                #     annotation_json,
+                #     parameters['input']['classes'], 
+                #     dataset_folder,
+                #     image_filename_selected_to_crop,
+                #     annotation_filename_selected_to_crop
+                # )
     
             # adding image annotations if exist
             if (len(image_annotation.bounding_boxes) == 0):
-                # number_of_images_with_no_annotations += 1
+                number_of_images_with_no_annotations += 1
+                logging_info(f'Image with no annotation: {image_annotation.image_name_with_extension}' + \
+                             f' {image_annotation.original_image_folder}')
                 continue
             else:   
                 # adding annotation              
                 images_with_annotations.append(image_annotation)
 
             # copying image and annotation files
-            Utils.copy_file(image_filename_with_extension,
+            # logging_info(f'image_filename_with_extension: {image_filename_with_extension}')
+            # logging_info(f'image_filename_selected_to_crop: {image_filename_selected_to_crop}')
+            # logging_info(f'supervisely_annotation_file: {supervisely_annotation_file}')
+            # logging_info(f'annotation_filename_selected_to_crop: {annotation_filename_selected_to_crop}')
+            Utils.copy_file(image_filename_to_copy,
                             input_supervisely_image_path,
                             image_filename_with_extension,
                             parameters['results']['all_images'])            
-            Utils.copy_file(supervisely_annotation_file,
+            Utils.copy_file(supervisely_annotation_filename_to_copy,
                             input_supervisely_annotation_path,
-                            supervisely_annotation_file,
-                            parameters['results']['all_images'])            
+                            supervisely_annotation_file_with_dataset_folder,
+                            parameters['results']['all_images'])
 
             # updating numbe of images at same size (height and width)
-            # update_statistics_of_image_size(image_annotation, processing_statistics)        
+            # update_statistics_of_image_size(image_annotation, processing_statistics)
 
+    logging_info(f'')
+    logging_info(f'Number of images with no annotations: {number_of_images_with_no_annotations}')
+    logging_info(f'Number of images selected to crop   : {len(images_with_annotations)}')
+    logging_info(f'Total number of images from datasets: {total_number_of_images_from_datasets}')    
+    logging_info(f'')
+
+    # for img in images_with_annotations:
+    #     logging_info(f'image_with_annotations: {img.to_string()}')
+   
     # returning list of images with bounding boxes selected according criterias
     return images_with_annotations
 
@@ -357,6 +406,9 @@ def split_image_list_randomly(all_image_annotations, number_of_images):
 
 # Splits list of bounding boxes for specific set 
 def split_bbox_list_randomly(all_bbox_and_image_annotations, number_of_images):
+
+    logging_info(f'all_bbox_and_image_annotations: {all_bbox_and_image_annotations}')
+    logging_info(f'number_of_images: {number_of_images}')
 
     # setting image filenames list 
     bbox_and_image_annotation_list = []

@@ -308,18 +308,11 @@ class Utils:
 
     @staticmethod
     def save_confusion_matrix_excel(
-        confusion_matrix, path_and_filename, x_labels_names, y_labels_names, 
-        tp_per_classes, fp_per_classes, fn_per_classes, tn_per_classes):
+        confusion_matrix, path_and_filename, x_labels_names, y_labels_names):
 
         # preparing columns name to list
         column_names = np.hstack(('', x_labels_names))
-        # column_names.append('TP')
-        # column_names.append('FP')
-        # column_names.append('FN')
-        # column_names.append('TN')
         print(f'column_names: {column_names}')
-        print(f'confusion_matrix: {confusion_matrix}')
-        print(f' tp_per_classes: { tp_per_classes}')
 
         # building sheet
         list = []
@@ -330,33 +323,60 @@ class Utils:
             list.append(row.tolist())
             i += 1
 
-        list.append('')            
-        list.append(['', 'TP', 'FP', 'FN', 'TN'])
-        print(f'rubens')
-        print(f'len(tp_per_classes): {len(tp_per_classes)}')
-        print(f'fp_per_classes: {fp_per_classes}')
-        print(f'fn_per_classes: {fn_per_classes}')
-        print(f'tp_per_classes: {tp_per_classes}')
-        print(f'x_labels_names: {x_labels_names}')
-        if x_labels_names[0] == '__background__':
-            classes = x_labels_names[1:]
-        else:           
-            classes = x_labels_names
-        print(f'classes: {classes}')
-
-        for i in range(len(tp_per_classes)):
-            print(f'i: {i}')
-            row = [classes[i], tp_per_classes[i], fp_per_classes[i], fn_per_classes[i], tn_per_classes[i]]
-            list.append(row)
-
         # print(f'column_names: {column_names}')
-        print(f'list: {list}')
+        # print(f'list: {list}')
 
         # creating dataframe from list 
         df = pd.DataFrame(list, columns=column_names)
 
         # writing excel file from dataframe
         df.to_excel(path_and_filename, sheet_name='confusion_matrix', index=False)
+
+    # @staticmethod
+    # def save_metrics_excel_old(
+    #     path_and_filename, model_name, 
+    #     model_accuracy, model_precision, 
+    #     model_recall, model_f1_score, 
+    #     model_dice, model_specificity,
+    #     model_map, model_map50, model_map75, 
+    #     number_of_images,
+    #     number_of_bounding_boxes_target,
+    #     number_of_bounding_boxes_predicted,
+    #     number_of_bounding_boxes_predicted_with_target,
+    #     number_of_ghost_predictions,
+    #     number_of_undetected_objects,
+    #     ):
+
+    #     # preparing columns name to list
+    #     column_names = ['A', 'B']
+
+    #     # building sheet
+    #     list = []
+    #     list.append(['Model', f'{model_name}'])
+    #     list.append(['Accuracy', f'{model_accuracy:.4f}'])
+    #     list.append(['Precision', f'{model_precision:.4f}'])
+    #     list.append(['Recall', f'{model_recall:.4f}'])
+    #     list.append(['F1-score ', f'{model_f1_score:.4f}'])
+    #     list.append(['Dice', f'{model_dice:.4f}'])
+    #     list.append(['Specificity', f'{model_specificity:.4f}'])
+    #     list.append(['map', f'{model_map:.4f}'])
+    #     list.append(['map50', f'{model_map50:.4f}'])
+    #     list.append(['map75', f'{model_map75:.4f}'])
+    #     list.append(['', ''])
+    #     list.append(['Summary of Bounding Boxes', ''])
+    #     list.append(['Total number of images', number_of_images])
+    #     list.append(['Bounding boxes target', number_of_bounding_boxes_target])
+    #     list.append(['Bounding boxes predicted', number_of_bounding_boxes_predicted])
+    #     list.append(['Bounding boxes predicted with target', number_of_bounding_boxes_predicted_with_target])
+    #     list.append(['Number of ghost preditions', number_of_ghost_predictions])
+    #     list.append(['Number of undetected objects', number_of_undetected_objects])
+
+    #     # creating dataframe from list        
+    #     df = pd.DataFrame(list, columns=column_names)
+
+    #     # writing excel file from dataframe
+    #     df.to_excel(path_and_filename, sheet_name='summary_metrics', index=False)
+
 
     @staticmethod
     def save_metrics_excel(path_and_filename, sheet_name,sheet_list):

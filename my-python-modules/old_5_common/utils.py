@@ -279,47 +279,14 @@ class Utils:
         # writing excel file from dataframe
         df.to_excel(path_and_filename, sheet_name='losses', index=False)
 
-    @staticmethod
-    def save_losses_maps(losses, maps, maps_50, maps_75, path_and_filename):
-        ''' 
-        Save losses values into MSExcel file
-        '''
-
-        # preparing columns name to list
-        column_names = [
-            'epoch',
-            'loss',
-            'map50-95', 
-            'map50',
-            'map75',
-        ]
-
-        # preparing list
-        list = []
-        for i in range(len(losses)):
-            item = [(i+1), losses[i], maps[i], maps_50[i], maps_75[i] ]
-            list.append(item)
-
-        # creating dataframe from list 
-        df = pd.DataFrame(list, columns=column_names)
-
-        # writing excel file from dataframe
-        df.to_excel(path_and_filename, sheet_name='loss_and_map', index=False)
 
     @staticmethod
     def save_confusion_matrix_excel(
-        confusion_matrix, path_and_filename, x_labels_names, y_labels_names, 
-        tp_per_classes, fp_per_classes, fn_per_classes, tn_per_classes):
+        confusion_matrix, path_and_filename, x_labels_names, y_labels_names):
 
         # preparing columns name to list
         column_names = np.hstack(('', x_labels_names))
-        # column_names.append('TP')
-        # column_names.append('FP')
-        # column_names.append('FN')
-        # column_names.append('TN')
         print(f'column_names: {column_names}')
-        print(f'confusion_matrix: {confusion_matrix}')
-        print(f' tp_per_classes: { tp_per_classes}')
 
         # building sheet
         list = []
@@ -330,27 +297,8 @@ class Utils:
             list.append(row.tolist())
             i += 1
 
-        list.append('')            
-        list.append(['', 'TP', 'FP', 'FN', 'TN'])
-        print(f'rubens')
-        print(f'len(tp_per_classes): {len(tp_per_classes)}')
-        print(f'fp_per_classes: {fp_per_classes}')
-        print(f'fn_per_classes: {fn_per_classes}')
-        print(f'tp_per_classes: {tp_per_classes}')
-        print(f'x_labels_names: {x_labels_names}')
-        if x_labels_names[0] == '__background__':
-            classes = x_labels_names[1:]
-        else:           
-            classes = x_labels_names
-        print(f'classes: {classes}')
-
-        for i in range(len(tp_per_classes)):
-            print(f'i: {i}')
-            row = [classes[i], tp_per_classes[i], fp_per_classes[i], fn_per_classes[i], tn_per_classes[i]]
-            list.append(row)
-
         # print(f'column_names: {column_names}')
-        print(f'list: {list}')
+        # print(f'list: {list}')
 
         # creating dataframe from list 
         df = pd.DataFrame(list, columns=column_names)
@@ -358,43 +306,60 @@ class Utils:
         # writing excel file from dataframe
         df.to_excel(path_and_filename, sheet_name='confusion_matrix', index=False)
 
+    # @staticmethod
+    # def save_metrics_excel_old(
+    #     path_and_filename, model_name, 
+    #     model_accuracy, model_precision, 
+    #     model_recall, model_f1_score, 
+    #     model_dice, model_specificity,
+    #     model_map, model_map50, model_map75, 
+    #     number_of_images,
+    #     number_of_bounding_boxes_target,
+    #     number_of_bounding_boxes_predicted,
+    #     number_of_bounding_boxes_predicted_with_target,
+    #     number_of_ghost_predictions,
+    #     number_of_undetected_objects,
+    #     ):
+
+    #     # preparing columns name to list
+    #     column_names = ['A', 'B']
+
+    #     # building sheet
+    #     list = []
+    #     list.append(['Model', f'{model_name}'])
+    #     list.append(['Accuracy', f'{model_accuracy:.4f}'])
+    #     list.append(['Precision', f'{model_precision:.4f}'])
+    #     list.append(['Recall', f'{model_recall:.4f}'])
+    #     list.append(['F1-score ', f'{model_f1_score:.4f}'])
+    #     list.append(['Dice', f'{model_dice:.4f}'])
+    #     list.append(['Specificity', f'{model_specificity:.4f}'])
+    #     list.append(['map', f'{model_map:.4f}'])
+    #     list.append(['map50', f'{model_map50:.4f}'])
+    #     list.append(['map75', f'{model_map75:.4f}'])
+    #     list.append(['', ''])
+    #     list.append(['Summary of Bounding Boxes', ''])
+    #     list.append(['Total number of images', number_of_images])
+    #     list.append(['Bounding boxes target', number_of_bounding_boxes_target])
+    #     list.append(['Bounding boxes predicted', number_of_bounding_boxes_predicted])
+    #     list.append(['Bounding boxes predicted with target', number_of_bounding_boxes_predicted_with_target])
+    #     list.append(['Number of ghost preditions', number_of_ghost_predictions])
+    #     list.append(['Number of undetected objects', number_of_undetected_objects])
+
+    #     # creating dataframe from list        
+    #     df = pd.DataFrame(list, columns=column_names)
+
+    #     # writing excel file from dataframe
+    #     df.to_excel(path_and_filename, sheet_name='summary_metrics', index=False)
+
+
     @staticmethod
     def save_metrics_excel(path_and_filename, sheet_name,sheet_list):
 
         # preparing columns name to list
-        # column_names = ['A', 'B']
+        column_names = ['A', 'B']
 
         # creating dataframe from list        
-        # df = pd.DataFrame(sheet_list, columns=column_names)
-        df = pd.DataFrame(sheet_list)
+        df = pd.DataFrame(sheet_list, columns=column_names)
 
         # writing excel file from dataframe
         df.to_excel(path_and_filename, sheet_name='summary_metrics', index=False)
-
-    @staticmethod
-    def save_mAP_plot(path_and_filename, map_05, map, map_075, title):
-        """
-        Saves the mAP@0.5 and mAP@0.5:0.95 per epoch.
-        :param path_and_filename: path and filename to save the graphs.
-        :param map_05: List containing mAP values at 0.5 IoU.
-        :param map: List containing mAP values at 0.5:0.95 IoU.
-        """
-        figure = plt.figure(figsize=(10, 7), num=1, clear=True)
-        ax = figure.add_subplot()
-        ax.plot(
-            map_05, color='tab:orange', linestyle='-', 
-            label='mAP@0.5'
-        )
-        ax.plot(
-            map_075, color='tab:blue', linestyle='-', 
-            label='mAP@0.75'
-        )
-        ax.plot(
-            map, color='tab:red', linestyle='-', 
-            label='mAP@0.5:0.95'
-        )
-        ax.set_xlabel('Epochs')
-        ax.set_ylabel('mAP')
-        ax.legend()
-        plt.title(title + LINE_FEED)  
-        figure.savefig(f"{path_and_filename}")

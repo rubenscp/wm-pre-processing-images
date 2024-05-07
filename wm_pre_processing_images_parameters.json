@@ -5,7 +5,7 @@
 
         "supervisely": {
             "meta_file": "meta.json",
-            "original_images_folder": "supervisely-format-03ds",
+            "original_images_folder": "supervisely-format-15ds",
             "images": "img",
             "annotations": "ann"
         },
@@ -19,9 +19,10 @@
         "models": ["ssd", "ssd_pascal_voc", "faster_rcnn", "yolov8"],
 
         "//comment_about_classes": "possible values: [Apothecium, Mature Sclerotium, Imature Sclerotium, White Mold] ",
-        "classes": ["Apothecium", "Mature Sclerotium", "Imature Sclerotium", "White Mold"],
+        "//commment all classes": ["Apothecium", "Mature Sclerotium", "Imature Sclerotium", "White Mold"],
+        "classes": ["Apothecium", "Imature Sclerotium", "Mature Sclerotium", "White Mold"],
 
-        "//comment_about_dimensions": "possible values for image dimensions used fo cropping: [(height, width), ...]",
+        "//comment_about_dime+nsions": "possible values for image dimensions used fo cropping: [(height, width), ...]",
         "dimensions": [
             {"height": 300, "width": 300}
         ],
@@ -36,25 +37,38 @@
         "balance_of_images_per_class": {
             "active": true,
             "Apothecium" : {
-                "number_for_train": 20, 
-                "number_for_valid": 20, 
-                "number_for_test": 20
+                "number_for_train": 553,
+                "number_for_valid": 186, 
+                "number_for_test": 120
             },
             "Mature Sclerotium": {
-                "number_for_train": 20, 
-                "number_for_valid": 20, 
-                "number_for_test": 20
+                "number_for_train": 553,
+                "number_for_valid": 186, 
+                "number_for_test": 120
             },
             "Imature Sclerotium": {
-                "number_for_train": 20, 
-                "number_for_valid": 20, 
-                "number_for_test": 20
+                "number_for_train": 553,
+                "number_for_valid": 186, 
+                "number_for_test": 120
             },
             "White Mold": {
-                "number_for_train": 20, 
-                "number_for_valid": 20, 
-                "number_for_test": 20
+                "number_for_train": 553,
+                "number_for_valid": 186, 
+                "number_for_test": 120
+            },
+            "Imature Sclerotium and White Mold": {
+                "number_for_train": 553,
+                "number_for_valid": 186, 
+                "number_for_test": 120
             }
+        },
+        "//comment_about_merging_classes": "Merge two classes in one class",
+        "merging_classes": {
+            "active": true,
+            "origin_classes": ["Imature Sclerotium", "White Mold"],
+            "target_class": "Imature Sclerotium and White Mold",
+            "target_class_index": 5,
+            "target_class_id": 90000001
         },
         "draw_and_save_bounding_box": true,
         "create_zipfile": false
@@ -65,7 +79,8 @@
             "Apothecium",
             "Imature Sclerotium",
             "Mature Sclerotium",
-            "White Mold"
+            "White Mold",
+            "Imature Sclerotium and White Mold"
         ]
     },
     "processing": {
@@ -142,6 +157,76 @@
         },
         "balanced_output_dataset": {
             "balanced_output_dataset_folder": "4-balanced-output-dataset",
+            "ssd_model": {
+                "main_folder": "ssd",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "bounding_box_folder": "bbox",
+                "images": "images",
+                "annotation_file": "label.csv"               
+            },
+            "ssd_model_with_pascal_voc_format": {
+                "main_folder": "ssd_pascal_voc",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "bounding_box_folder": "bbox"
+            },
+            "faster_rcnn_model": {
+                "main_folder": "faster_rcnn",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "bounding_box_folder": "bbox"
+            },
+             "yolov8_model": {
+                "main_folder": "yolov8",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "images_folder": "images",
+                "labels_folder": "labels",
+                "bounding_box_folder": "bbox"
+            }
+        },
+        "merged_classes_output_dataset": {
+            "merged_classes_output_dataset_folder": "5-merged_classes-output-dataset",
+            "ssd_model": {
+                "main_folder": "ssd",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "bounding_box_folder": "bbox",
+                "images": "images",
+                "annotation_file": "label.csv"               
+            },
+            "ssd_model_with_pascal_voc_format": {
+                "main_folder": "ssd_pascal_voc",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "bounding_box_folder": "bbox"
+            },
+            "faster_rcnn_model": {
+                "main_folder": "faster_rcnn",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "bounding_box_folder": "bbox"
+            },
+             "yolov8_model": {
+                "main_folder": "yolov8",
+                "train_folder": "train",
+                "valid_folder": "valid",
+                "test_folder": "test",
+                "images_folder": "images",
+                "labels_folder": "labels",
+                "bounding_box_folder": "bbox"
+            }
+        },
+        "merged_classes_balanced_output_dataset": {
+            "merged_classes_balanced_output_dataset_folder": "6-merged_classes_balanced-output-dataset",
             "ssd_model": {
                 "main_folder": "ssd",
                 "train_folder": "train",

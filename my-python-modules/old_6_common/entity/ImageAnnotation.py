@@ -374,13 +374,3 @@ class ImageAnnotation:
 
         # returning target object
         return target 
-
-
-    # merge class labels to one class
-    def merge_classes_in_bounding_boxes(self, origin_classes, target_class, target_class_id):      
-        for bounding_box in self.bounding_boxes:
-            if bounding_box.class_title in origin_classes:
-                bounding_box.class_title = target_class
-                bounding_box.class_id = target_class_id
-
-

@@ -1,5 +1,5 @@
 #PBS -N pre_process
-#PBS -q testegpu
+#PBS -q serial
 #PBS -m abe
 #PBS -e pre_process_errors 
 #PBS -o pre_process_output

@@ -19,10 +19,23 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import pandas as pd
-
 # from sklearn import metrics
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from torchvision.ops import * 
+# from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+# from torchvision import ops
+from torchmetrics.classification import MulticlassConfusionMatrix
+from torchmetrics.detection import MeanAveragePrecision
+# from torchmetrics.detection import Accuracy
+from torchmetrics.classification import MulticlassPrecision 
+# from torchmetrics.detection import Recall 
+# from torchmetrics.detection import F1Score
+# from torchmetrics.detection import Dice
+# from torchmetrics.detection import Specificity
+
+# import seaborn as sns
+
+# from torchvision.models.detection import box_iou
+# from torchvision.ops import * 
 
 # Importing python modules
 from common.manage_log import *
@@ -32,45 +45,42 @@ from common.manage_log import *
 # ###########################################
 LINE_FEED = '\n'
 
-class Metrics:
+class MetricsTorchmetrics:
 
-    def __init__(self, model=None, number_of_classes=None):
+    def __init__(self, model=None, number_of_classes=0):
         self.model = model
+        self.preds = []
+        self.targets = []
         self.number_of_classes = number_of_classes
-
-        # This list store details of all inferenced images (image_name, targets_list, preds_list)
-        self.inferenced_images = []
-        self.images_bounding_boxes = []
-        self.result = None
-        self.full_confusion_matrix = None
-        self.full_confusion_matrix_normalized = None
         self.confusion_matrix = None
-        self.confusion_matrix_normalized = None
-        self.confusion_matrix_summary = {
-            'number_of_images': 0,
-            'number_of_bounding_boxes_target': 0,
-            'number_of_bounding_boxes_predicted': 0,
-            'number_of_bounding_boxes_predicted_with_target': 0,
-            'number_of_ghost_predictions': 0,
-            'number_of_undetected_objects': 0,
-        }
-        self.counts_per_class = []
+        self.mean_average_precision = None
+        self.precision = None
 
-        self.tp_per_class = []
-        self.fp_per_class = []
-        self.fn_per_class = []
-        self.tn_per_class = []
-        self.tp_model = 0
-        self.fp_model = 0
-        self.fn_model = 0
-        self.tn_model = 0
-        self.accuracy_per_class = []
-        self.precision_per_class = []
-        self.recall_per_class = []
-        self.f1_score_per_class = []
-        self.dice_per_class = []
+        # self.inferenced_images = []
+        # self.images_bounding_boxes = []
+        # self.result = None
+        # self.full_confusion_matrix = None
+        # self.full_confusion_matrix_normalized = None
+        # self.confusion_matrix = None
+        # self.confusion_matrix_normalized = None
+        # self.confusion_matrix_summary = {
+        #     'number_of_images': 0,
+        #     'number_of_bounding_boxes_target': 0,
+        #     'number_of_bounding_boxes_predicted': 0,
+        #     'number_of_bounding_boxes_predicted_with_target': 0,
+        #     'number_of_ghost_predictions': 0,
+        #     'number_of_undetected_objects': 0,
+        # }
+        # self.counts_per_class = []
 
-       
+        # self.tp_per_classes = []
+        # self.fp_per_classes = []
+        # self.fn_per_classes = []
+        # self.tn_per_classes = []
+        # self.tp_model = 0
+        # self.fp_model = 0
+        # self.fn_model = 0
+        # self.tn_model = 0
 
     def to_string(self):
         text = LINE_FEED + 'Metrics' + LINE_FEED + LINE_FEED
@@ -81,57 +91,164 @@ class Metrics:
         # text += str(self.target) + LINE_FEED
         return text
 
-    def set_target(self, target):
-        self.target = target 
+    def add_targets(self, targets):
+        # targets = torch.Tensor(targets)
+        self.targets.append(targets)
+        # logging_info(f'add_targets 1 targets: {targets}')
+        # logging_info(f'add_targets 2 self.targets: {self.targets}')
         
-    def set_preds(self, preds):
-        self.preds = preds
-      
-    def get_predicted_bounding_boxes(self, boxes, scores, labels):
+    def add_preds(self, preds):
+        # preds = torch.Tensor(preds)
+        self.preds.append(preds)
+        # logging_info(f'add_preds 1 preds: {preds}')
+        # logging_info(f'add_preds 2 self.preds: {self.preds}')
+
+    def compute_confusion_matrix(self):
+        logging_info(f'Computing Confusion Matrix')
+
+        target = torch.Tensor([2, 1, 0, 0])
+        preds = torch.Tensor([[0.16, 0.26, 0.58],
+                        [0.22, 0.61, 0.17],
+                        [0.71, 0.09, 0.20],
+                        [0.05, 0.82, 0.13]])
+        logging_info(f'target: {target}')
+        logging_info(f'target.shape: {target.shape}')
+        logging_info(f'preds: {preds}')
+        logging_info(f'preds.shape: {preds.shape}')
+        metric = MulticlassConfusionMatrix(num_classes=3)
+        cm = metric(preds, target)
+        logging_info(f'cm: {cm}')
+
+        logging_info(f'MultilabelConfusionMatrix')
+
+        from torch import tensor
+        from torchmetrics.classification import MultilabelConfusionMatrix
+        # target = tensor([[0, 1, 0], [1, 0, 1]])
+        target = tensor([[0], [1], [0], [1]])
+        preds = tensor([[0, 0, 1], [1, 0, 1], [1], []])
+        logging_info(f'target: {target}')
+        logging_info(f'target.shape: {target.shape}')
+        logging_info(f'preds: {preds}')
+        logging_info(f'preds.shape: {preds.shape}')
+        metric = MultilabelConfusionMatrix(num_labels=3)
+        cml = metric(preds, target)
+        logging_info(f'cml: {cml}')
+        
+        exit()
+
+        target_labels = []
+        preds_labels = []
+        for item in self.targets:
+            target_labels.append(item['labels'].numpy())
+        for item in self.preds:
+            preds_labels.append(item['labels'].numpy())
+        logging_info(f'target_labels: {target_labels}')
+        logging_info(f'preds_labels: {preds_labels}')
+                
+        metric = MulticlassConfusionMatrix(num_classes=self.number_of_classes)
+        # logging_info(f'self.targets: {self.targets}')
+        # logging_info(f'self.preds: {self.preds}')
+        # self.confusion_matrix(self.preds, self.targets)
+        self.confusion_matrix = metric(preds_labels, target_labels)
+        logging_info(f'self.confusion_matrix: {self.confusion_matrix}')
+
+        exit()
+
+
+    def compute_mean_average_precision(self):
+        logging_info(f'Computing Mean Average Precision')
+        metric = MeanAveragePrecision()
+        logging_info(f'self.targets: {self.targets}')
+        logging_info(f'self.preds: {self.preds}')
+        metric.update(self.preds, self.targets)
+        self.mean_average_precision = metric.compute()
+        logging_info(f'self.mean_average_precision: {self.mean_average_precision}')
+
+    def compute_precision(self):
+        logging_info(f'Computing Multiclass Precision')
+        metric = MulticlassPrecision(num_classes=self.number_of_classes)
+        logging_info(f'self.targets: {self.targets}')
+        logging_info(f'self.preds: {self.preds}')
+        self.precision = metric(self.preds, self.targets)
+        logging_info(f'self.precision: {self.precision}')
+
+    # def compute_precision(self):
+    #     logging_info(f'Computing Precision')
+    #     precision = Precision(task='multiclass', average='macro', num_classes=self.number_of_classes)
+    #     logging_info(f'self.targets: {self.targets}')
+    #     logging_info(f'self.preds: {self.preds}')
+    #     self.precision = precision(self.preds, self.targets)        
+    #     logging_info(f'self.precision: {self.precision}')
+
+
+
+
+    # =============================================================================
+
+
+    # def get_target_size(self):
+    #     # counting number of bounding boxes
+    #     count = 0
+    #     for target in self.target:
+    #         count += len(target['labels'])
+
+    #     # returning number of bounding boxes target
+    #     return count
+        
+
+    # def get_preds_size(self):
+    #     # counting number of bounding boxes
+    #     count = 0
+    #     for pred in self.preds:
+    #         count += len(pred['labels'])
+
+    #     # returning number of bounding boxes predicted
+    #     return count
+
+    # def get_predicted_bounding_boxes(self, boxes, scores, labels):
             
-        # creating predicted object 
-        predicted = []
+    #     # creating predicted object 
+    #     predicted = []
 
-        # getting bounding boxes in format fot predicted object 
-        predicted_boxes = []
-        predicted_scores = []
-        predicted_labels = []
-        for i, box in enumerate(boxes):        
-            predicted_boxes.append(box)
-            predicted_scores.append(scores[i])
-            predicted_labels.append(labels[i])
+    #     # getting bounding boxes in format fot predicted object 
+    #     predicted_boxes = []
+    #     predicted_scores = []
+    #     predicted_labels = []
+    #     for i, box in enumerate(boxes):        
+    #         predicted_boxes.append(box)
+    #         predicted_scores.append(scores[i])
+    #         predicted_labels.append(labels[i])
 
-        # setting predicted dictionary 
-        item = {
-            "boxes": torch.tensor(predicted_boxes, dtype=torch.float),
-            "scores": torch.tensor(predicted_scores, dtype=torch.float),
-            "labels": torch.tensor(predicted_labels)
-            }
-        predicted.append(item)
+    #     # setting predicted dictionary 
+    #     item = {
+    #         "boxes": torch.tensor(predicted_boxes, dtype=torch.float),
+    #         "scores": torch.tensor(predicted_scores, dtype=torch.float),
+    #         "labels": torch.tensor(predicted_labels)
+    #         }
+    #     predicted.append(item)
 
-        # returning predicted object
-        return predicted 
+    #     # returning predicted object
+    #     return predicted 
 
     def set_details_of_inferenced_image(self, image_name, targets, preds):
-        '''
-            The sample below shows data format used here.
-            inferenced_image: {
-                'image_name': 'IMG_1853-bbox-1526946742.jpg', 
-                'targets_list': [
-                    {
-                    'boxes': tensor([[ 85.,  36., 215., 263.]]), 
-                    'labels': tensor([3])
-                    }
-                    ], 
-                'preds_list': [
-                    {
-                    'boxes': tensor([[105.,  59., 193., 235.],	[103.,  54., 197., 242.]]), 
-                    'scores': tensor([0.7952, 0.5049]), 
-                    'labels': tensor([3, 2])
-                    }
-                    ]		
-            }
-        '''
+
+        # The sample below shows data format used here.
+        #    inferenced_image: {
+        #        'image_name': 'IMG_1853-bbox-1526946742.jpg', 
+        #        'targets_list': [
+        #            {
+        #            'boxes': tensor([[ 85.,  36., 215., 263.]]), 
+        #            'labels': tensor([3])
+        #            }
+        #            ], 
+        #        'preds_list': [
+        #            {
+        #            'boxes': tensor([[105.,  59., 193., 235.],	[103.,  54., 197., 242.]]), 
+        #            'scores': tensor([0.7952, 0.5049]), 
+        #            'labels': tensor([3, 2])
+        #            }
+        #            ]		
+        #    }
 
         item = {
             "image_name": image_name,
@@ -168,8 +285,7 @@ class Metrics:
         self.images_bounding_boxes.append(image_bounding_box)
 
 
-    def compute_confusion_matrix(self, model_name, num_classes, threshold, iou_threshold, 
-                                 metrics_folder, running_id_text, tested_folder):
+    def compute_confusion_matrix_old(self, model_name, num_classes, threshold, iou_threshold, metrics_folder):
 
         # Inspired from:
         # https://medium.com/@tenyks_blogger/multiclass-confusion-matrix-for-object-detection-6fc4b0135de6
@@ -222,7 +338,7 @@ class Metrics:
                             threshold=threshold, 
                             iou_threshold=iou_threshold, 
                             iou=0,
-                            status='undetected-fn'
+                            status='Undetected object'
                         )
             else:
                 for pred in preds:
@@ -237,20 +353,19 @@ class Metrics:
 
                                 # evaluate IoU threshold and labels
                                 if iou >= iou_threshold:
+                                    status = 'Target detected'
                                     number_of_bounding_boxes_predicted_with_target += 1                           
                                     if p_label == t_label:
                                         # True Positive 
                                         self.full_confusion_matrix[t_label, p_label] += 1
-                                        status = 'target-tp'
                                     else:                        
                                         # False Positive 
                                         self.full_confusion_matrix[t_label, p_label] += 1
-                                        status = 'target-fp'
                                 else:
                                     # Counting ghost predictions   
                                     number_of_ghost_predictions += 1                         
                                     self.full_confusion_matrix[t_label, ghost_predictions_index] += 1
-                                    status = 'err-pred-fp'
+                                    status = 'Ghost prediction'
 
                                 # adding bounding box to list of statistics
                                 self.add_image_bounding_box(
@@ -270,31 +385,28 @@ class Metrics:
         # saving images and bounding boxes inferenced
         path_and_filename = os.path.join(
             metrics_folder,
-            model_name + '_' + running_id_text + '_images_bounding_boxes.xlsx'
+            model_name + '_images_bounding_boxes.xlsx'
         )
         self.save_inferenced_images(path_and_filename)
-
-        # split tested images according status of confusion matrix 
-        self.split_tested_images(tested_folder)
 
         # getting just confusion matrix whithout the background, ghost predictions and undetected objects
         self.confusion_matrix = np.copy(self.full_confusion_matrix[1:-1,1:-1])
 
         # normalizing values summarizing by rows
         self.confusion_matrix_normalized = np.copy(self.confusion_matrix)
-        sum_columns_aux_1 = np.sum(self.confusion_matrix_normalized,axis=0)
+        sum_columns_aux_1 = np.sum(self.confusion_matrix_normalized,axis=1)
         row, col = self.confusion_matrix_normalized.shape
-        for i in range(col):
+        for i in range(row):
             if sum_columns_aux_1[i] > 0:
-                self.confusion_matrix_normalized[:,i] = self.confusion_matrix_normalized[:,i] / sum_columns_aux_1[i]
+                self.confusion_matrix_normalized[i] = self.confusion_matrix_normalized[i] / sum_columns_aux_1[i]
 
         # normalizing values summarizing by rows
         self.full_confusion_matrix_normalized = np.copy(self.full_confusion_matrix)
-        sum_columns_aux_2 = np.sum(self.full_confusion_matrix_normalized,axis=0)
+        sum_columns_aux_2 = np.sum(self.full_confusion_matrix_normalized,axis=1)
         row, col = self.full_confusion_matrix_normalized.shape
-        for i in range(col):
+        for i in range(row):
             if sum_columns_aux_2[i] > 0:
-                self.full_confusion_matrix_normalized[:,i] = self.full_confusion_matrix_normalized[:,i] / sum_columns_aux_2[i]
+                self.full_confusion_matrix_normalized[i] = self.full_confusion_matrix_normalized[i] / sum_columns_aux_2[i]
 
         # summary of confusion matrix        
         self.confusion_matrix_summary["number_of_images"] = len(self.inferenced_images)
@@ -304,7 +416,7 @@ class Metrics:
         self.confusion_matrix_summary["number_of_ghost_predictions"] = number_of_ghost_predictions
         self.confusion_matrix_summary["number_of_undetected_objects"] = number_of_undetected_objects
 
-        # computing metrics from confusion matrix 
+        # computing metrics from confuson matrix 
         self.compute_metrics_from_confusion_matrix()
 
     def confusion_matrix_to_string(self):
@@ -339,7 +451,7 @@ class Metrics:
     # 2) https://stackoverflow.com/questions/75478099/how-to-extract-performance-metrics-from-confusion-matrix-for-multiclass-classifi?newreg=c9549e71afff4f13982ca151adedfbd5
     # 3) https://www.youtube.com/watch?v=FAr2GmWNbT0
     # 4) https://www.linkedin.com/pulse/yolov8-projects-1-metrics-loss-functions-data-formats-akbarnezhad/ --> EXCCELENT
-    def not_used_compute_metrics_from_confusion_matrix_deactivated(self):
+    def compute_metrics_from_confusion_matrix_deactivated(self):
         """
         Obtain TP, FN FP, and TN for each class in the confusion matrix
         """
@@ -416,59 +528,40 @@ class Metrics:
         Obtain TP, FN FP, and TN for each class in the confusion matrix
         """
 
-        logging_info(f'full_confusion_matrix: {LINE_FEED}{self.full_confusion_matrix}')
+        logging_info(f'confusion: {LINE_FEED}{self.full_confusion_matrix}')
 
-        # initializing variable 
-        self.tp_per_class = [0 for i in range(self.number_of_classes + 1)]
-        self.fp_per_class = [0 for i in range(self.number_of_classes + 1)]
-        self.fn_per_class = [0 for i in range(self.number_of_classes + 1)]
-        self.tn_per_class = [0 for i in range(self.number_of_classes + 1)]
+        self.tp_per_classes = []
+        self.fp_per_classes = []
+        self.fn_per_classes = []
+        self.tn_per_classes = []
         self.tp_model = 0
         self.fp_model = 0
         self.fn_model = 0
         self.tn_model = 0
-        
+
         cm_fp = self.full_confusion_matrix[1:-1, 1:]
-        self.tp_per_class = cm_fp.diagonal()
-        self.fp_per_class = cm_fp.sum(1) - self.tp_per_class
-        
+        self.tp_per_classes = cm_fp.diagonal()
+        self.fp_per_classes = cm_fp.sum(1) - self.tp_per_classes
         cm_fn = self.full_confusion_matrix[1:, 1:-1]
-        # DO NOT USE below because it consider all values of matrix, but it mus 
-        # use just the last row to calculate the false negatives
-        # self.fn_per_class = cm_fn.sum(0) - self.tp_per_class
-        self.fn_per_class = cm_fn[-1:,].squeeze()
+        self.fn_per_classes = cm_fn.sum(0) - self.tp_per_classes
 
-        # TN will be calculate just per class as every bounding boxes predicted of other classes,
-        # all predicted bbox minus the bounding boxes predicted considering TP and FP of that class.
-        logging_info(f'self.full_confusion_matrix: {self.full_confusion_matrix}')
-        cm_tn = self.full_confusion_matrix[1:-1, 1:]
-
-        # computing all values of confusion matrix for true negative 
-        cm_tn_all = cm_tn.sum()
-
-        logging_info(f'cm_tn: {cm_tn}')
-        for i in range(self.number_of_classes):
-            # sum all elements of the row "i"
-            cm_tn_row = cm_tn[i,].sum()
-            # sum all elements of the column "i"
-            cm_tn_col = cm_tn[:,i].sum()
-            # getting the true positive of the element "i"
-            element_tp = cm_tn[i,i]
-            # compute the true negative value 
-            self.tn_per_class[i] = cm_tn_all - cm_tn_row - cm_tn_col + element_tp
-
-        # summarizing TP, FP, FN       
-        self.tp_model = self.tp_per_class.sum()
-        self.fp_model = self.fp_per_class.sum()
-        self.fn_model = self.fn_per_class.sum()
+        self.tp_model = self.tp_per_classes.sum()
+        self.fp_model = self.fp_per_classes.sum()
+        self.fn_model = self.fn_per_classes.sum()
         self.tn_model = 0 
 
-        # computing metrics accuracy, precision, recall, f1-score and dice per classes
-        self.compute_accuracy_per_class()
-        self.compute_precision_per_class()
-        self.compute_recall_per_class()
-        self.compute_f1_score_per_class()
-        self.compute_dice_per_class()
+        logging_info(f'TP / FN / FP / TN from confunsion matrix: ')
+        # for count in self.counts_per_class:
+        #     logging_info(f'count {count}')
+        
+        logging_info(f'self.tp_per_classes:{self.tp_per_classes}')
+        logging_info(f'self.tp_model:{self.tp_model}')
+        logging_info(f'self.fp_per_classes:{self.fp_per_classes}')
+        logging_info(f'self.fp_model:{self.fp_model}')
+        logging_info(f'self.fn_per_classes:{self.fn_per_classes}')
+        logging_info(f'self.fn_model:{self.fn_model}')
+        logging_info(f'self.tn_per_classes:{self.tn_per_classes}')
+        logging_info(f'self.tn_model:{self.tn_model}')
 
     def get_value_metric(self, metric):
         value = 0
@@ -478,9 +571,8 @@ class Metrics:
 
     # https://docs.kolena.io/metrics/accuracy/
     def get_model_accuracy(self):
-        # accuracy = (self.tp_model + self.tn_model) /  \
-        #            (self.tp_model + self.tn_model + self.fp_model + self.fn_model)
-        accuracy = 0                   
+        accuracy = (self.tp_model + self.tn_model) /  \
+                   (self.tp_model + self.tn_model + self.fp_model + self.fn_model)
         return accuracy
 
     # https://docs.kolena.io/metrics/precision/
@@ -512,77 +604,7 @@ class Metrics:
         dice = (2 * self.tp_model) /  \
                ((2 * self.tp_model) + self.fp_model + self.fn_model)
         return dice
-
-    # compute accuracy per classes and for the model
-    def compute_accuracy_per_class(self):
-        # initializing variable 
-        self.accuracy_per_class = [0 for i in range(self.number_of_classes + 1)]
-
-        # compute precision for each class
-        for i in range(len(self.tp_per_class)):
-            denominator = self.tp_per_class[i] + self.tn_per_class[i] + \
-                          self.fp_per_class[i] + self.fn_per_class[i]
-            if denominator > 0:
-                self.accuracy_per_class[i] = (self.tp_per_class[i] + self.tn_per_class[i]) / denominator
-
-    # compute precision per classes and for the model
-    def compute_precision_per_class(self):
-        # initializing variable 
-        self.precision_per_class = [0 for i in range(self.number_of_classes + 1)]
-
-        # compute precision for each class
-        for i in range(len(self.tp_per_class)):
-            denominator = self.tp_per_class[i] + self.fp_per_class[i]
-            if denominator > 0:
-                self.precision_per_class[i] = (self.tp_per_class[i]) / denominator
-
-        # compute precision of the model
-        self.precision_per_class[i+1] = np.sum(self.precision_per_class) / self.number_of_classes
-
-    # compute recall per classes and for the model
-    def compute_recall_per_class(self):
-        # initializing variable 
-        self.recall_per_class = [0 for i in range(self.number_of_classes + 1)]
-
-        # compute recall for each class
-        for i in range(len(self.tp_per_class)):
-            denominator = self.tp_per_class[i] + self.fn_per_class[i]
-            if denominator > 0:
-                self.recall_per_class[i] = (self.tp_per_class[i]) / denominator
-
-        # compute recall of the model
-        self.recall_per_class[i+1] = np.sum(self.recall_per_class) / self.number_of_classes
-
-    # compute f1-score per classes and for the model
-    def compute_f1_score_per_class(self):
-        # initializing variable 
-        self.f1_score_per_class = [0 for i in range(self.number_of_classes + 1)]
-
-        # compute f1-score for each class
-        for i in range(len(self.tp_per_class)):
-            denominator = self.precision_per_class[i] + self.recall_per_class[i]
-            if denominator > 0:
-                self.f1_score_per_class[i] = \
-                (2 * self.precision_per_class[i] * self.recall_per_class[i]) / denominator
-
-        # compute f1-score of the model
-        self.f1_score_per_class[i+1] = np.sum(self.f1_score_per_class) / self.number_of_classes
-
-    # compute dice per classes and for the model
-    def compute_dice_per_class(self):
-        # initializing variable 
-        self.dice_per_class = [0 for i in range(self.number_of_classes + 1)]
-
-        # compute dice for each class
-        for i in range(len(self.tp_per_class)):
-            denominator = (2 * self.tp_per_class[i]) + self.fp_per_class[i] + self.fn_per_class[i]
-            if denominator > 0:
-                self.dice_per_class[i] = (2 * self.tp_per_class[i]) / denominator
-
-        # compute dice of the model
-        self.dice_per_class[i+1] = np.sum(self.dice_per_class) / self.number_of_classes
-
-
+        
     def save_inferenced_images(self, path_and_filename):
 
         # preparing columns name to list
@@ -606,28 +628,6 @@ class Metrics:
         df.to_excel(path_and_filename, sheet_name='bounding_boxes', index=False)
 
 
-    def split_tested_images(self, tested_folder):
-
-        # creating specific folders 
-        target_tp = os.path.join(tested_folder, 'target-tp')
-        Utils.create_directory(target_tp)
-
-        target_fp = os.path.join(tested_folder, 'target-fp')
-        Utils.create_directory(target_fp)
-
-        err_pred_fp = os.path.join(tested_folder, 'err-pred-fp')
-        Utils.create_directory(err_pred_fp)
-
-        undetected_fn = os.path.join(tested_folder, 'undetected-fn')
-        Utils.create_directory(undetected_fn)
-
-        for image_bounding_box in self.images_bounding_boxes:
-            filename, extension = Utils.get_filename_and_extension(image_bounding_box[0])
-            filename = filename + '_predicted.' + extension
-            input_path = tested_folder
-            output_path = os.path.join(tested_folder, image_bounding_box[9])
-            Utils.copy_file_same_name(filename, input_path, output_path)
-        
     def compute_metrics_sklearn(self):
         logging_info(f'Computing metrics using Sklearn')
 
